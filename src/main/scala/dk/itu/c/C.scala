@@ -52,8 +52,21 @@ trait C {
   case class TypePointer (pointerType: Type) extends Type
   
   sealed abstract class Expression
+  case class AccessExpr (access: Access) //x    or  *p    or  a[e]
+  case class Assign (access: Access, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
+  case class Address (access: Access) extends Expression //&x   or  &*p   or  &a[e] 
   case class ConstantInteger (contents: Integer) extends Expression
-  case class BinaryOperator (operator: String, expression1: Expression, expression2: Expression) extends Expression
+  case class UnaryPrim (operator: String, expression: Expression) extends Expression //Unary primitive operator
+  case class BinaryPrim (operator: String, expression1: Expression, expression2: Expression) extends Expression //Binary primitive operator
+  case class SeqAnd (expr1: Expression, expr2: Expression) extends Expression //Sequential and &&
+  case class SeqOr (expr1: Expression, expr2: Expression) extends Expression //Sequential or ||
+  case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
+  case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
+
+  sealed abstract class Access
+  case class AccessVariable (ident: String) extends Access //Variable access  ident
+  case class AccessDeref (expr: Expression) extends Access //Pointer dereferencing  *p
+  case class AccessIndex (access: Access, expr: Expression) extends Access //Access Array indexing  a[e]  
 }
 
 trait Generator extends C {
