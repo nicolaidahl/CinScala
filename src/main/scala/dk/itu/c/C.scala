@@ -27,18 +27,64 @@ furnished to do so, subject to the following conditions:
 package dk.itu.c
 
 trait C {
+  sealed abstract class CAST
+  case class Program (contents: List[TopDec]) extends CAST
+  
+  sealed abstract class TopDec
+  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: List[Tuple2[Type, String]], statement: Statement) extends TopDec
+  case class VariableDec (variableType: Type, identifier: String) extends TopDec
+  
+  sealed abstract class BlockDec
+  case class BlockStatement (statement: Statement) extends BlockDec
+  case class LocalVariable (variableType: Type, identifier: String) extends BlockDec
+  
   sealed abstract class Statement
   case class Block (contents: List[Statement]) extends Statement
-
+  case class ExpressionStatement (contents: Expression) extends Statement
+  case class If (condition: Expression, trueBranch: Statement, falseBranch: Statement) extends Statement
+  case class While (condition: Expression, contents: Statement) extends Statement
+  case class Return (returnExpression: Option[Expression]) extends Statement
+  
+  sealed abstract class Type
+  case class TypeInteger extends Type
+  case class TypeChar extends Type
+  case class TypeArray (arrayType: Type, length: Option[Integer]) extends Type
+  case class TypePointer (pointerType: Type) extends Type
+  
+  sealed abstract class Expression
+  case class ConstantInteger (contents: Integer) extends Expression
+  case class BinaryOperator (operator: String, expression1: Expression, expression2: Expression) extends Expression
 }
 
 trait Generator extends C {
-  def generate (s: Statement): String = 
-    s match {
-      case Block (ss) => ss.map(generate).mkString("{",";","}")
+  def generate (c: CAST): String =
+    c match {
+      case Program (contents) => contents.map(
+          e=>e match{
+            case function: FunctionDec => generateFunctionDec(function) 
+            case variable: VariableDec => generateVariableDec(variable) 
+       }).mkString("\n")
+  	}
+  
+  def evalType(t: Type) : String = 
+    t match {
+      case t1: TypeInteger => "int"
+      case t2: TypeChar => "char"
+      case t3: TypePointer => evalType(t3.pointerType) + "*"
+      case t4: TypeArray => evalType(t4.arrayType) + "[" + t4.length +"]"
     }
+    
+  def generateFunctionDec(functionDec: FunctionDec): String =
+    ""
+  def generateVariableDec(variableDec: VariableDec): String =
+    evalType(variableDec.variableType) + " " + variableDec.identifier 
+  
+  
+  /*s match {
+      case Block (ss) => ss.map(generate).mkString("{",";","}")
+    }*/
 }
 
 object Test extends Generator with App {
-  println(generate(Block(Nil)))
+  println(generate(Program(List(VariableDec(TypeInteger(), "kage")))))
 }
