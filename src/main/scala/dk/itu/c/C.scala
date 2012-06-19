@@ -71,11 +71,22 @@ trait Generator extends C {
       case t1: TypeInteger => "int"
       case t2: TypeChar => "char"
       case t3: TypePointer => evalType(t3.pointerType) + "*"
-      case t4: TypeArray => evalType(t4.arrayType) + "[" + t4.length +"]"
+      case t4: TypeArray => t4.length match {
+        case None => evalType(t4.arrayType) + "[]"
+        case Some(l) => evalType(t4.arrayType) + "[" + l + "]"
+      }
     }
     
-  def generateFunctionDec(functionDec: FunctionDec): String =
-    ""
+  def generateFunctionDec(functionDec: FunctionDec): String = {
+    val ts = 
+      functionDec.returnType match {
+        case None => "void"
+        case Some(t) => evalType(t)
+      }
+  
+    ts + " " + functionDec.identifier + "(" + functionDec.parameters.map(tuple => tuple._1 + " " + tuple._2 + ",") + ")" + "{" + functionDec.statement + "}"
+  }
+  
   def generateVariableDec(variableDec: VariableDec): String =
     evalType(variableDec.variableType) + " " + variableDec.identifier 
   
@@ -86,5 +97,5 @@ trait Generator extends C {
 }
 
 object Test extends Generator with App {
-  println(generate(Program(List(VariableDec(TypeInteger(), "kage")))))
+  //println(generate(Program(List(VariableDec(TypeInteger(), "kage"), FunctionDec(TypeInteger, "jens", List(Tuple2(TypeInterger, "antal")), )))))
 }
