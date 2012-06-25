@@ -25,25 +25,38 @@ furnished to do so, subject to the following conditions:
 */
 
 package dk.itu.c
+import scala.collection.mutable.HashMap
+
 
 trait C {
+  
+  case class CASTException extends Exception
+  case class UnknownVariableException(smth:String)  extends CASTException
+  
+  //Variable environment: Map from identifier to tuple of variable type and declaration level
+  type VarEnv = HashMap[String, (Type, Integer)] 
+  //Function environment: Map from identifier to tuple of return type and argument list
+  type FunEnv = HashMap[String, (Type, ArgList)]
+  //Argument list
+  type ArgList = List[(Type, String)]  
   
   
   case class Program (contents: List[TopDec])
   
   //Top level declaration
   sealed abstract class TopDec
-  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: List[(Type, String)], statement: Statement) extends TopDec
+  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, statements: List[Statement]) extends TopDec
   case class VariableDec (variableType: Type, identifier: String) extends TopDec
   
   //Declarations inside a block
-  sealed abstract class BlockDec
+  /*sealed abstract class BlockDec
   case class BlockStatement (statement: Statement) extends BlockDec
-  case class LocalVariable (variableType: Type, identifier: String) extends BlockDec
+  case class LocalVariable (variableType: Type, identifier: String) extends BlockDec*/
   
   //C statements
   sealed abstract class Statement
-  case class Block (contents: List[BlockDec]) extends Statement
+  case class LocalVariable (variableType: Type, identifier: String) extends Statement
+  case class Block (contents: List[Statement]) extends Statement
   case class ExpressionStatement (expr: Expression) extends Statement
   case class If (condition: Expression, trueBranch: Statement, falseBranch: Statement) extends Statement
   case class While (condition: Expression, contents: Statement) extends Statement
@@ -84,6 +97,7 @@ trait C {
 
   //C variable access
   sealed abstract class Access
+  case class AccessNewLocVar(locVar: LocalVariable) extends Access //Variable access when var just declared: int i = 2;
   case class AccessVariable (ident: String) extends Access //Variable access  ident
   case class AccessDeref (expr: Expression) extends Access //Pointer dereferencing  *p
   case class AccessIndex (access: Access, expr: Expression) extends Access //Access Array indexing  a[e]  
@@ -91,73 +105,78 @@ trait C {
 
 trait Generator extends C {
   
-  //Main generate function
-  def generate (prog: Program): String =
-    prog.contents.map{
-      case function: FunctionDec => generateFunctionDec(function) 
-      case variable: VariableDec => generateVariableDec(variable) 
-    } mkString "\n"
   
-  def generateFunctionDec(functionDec: FunctionDec): String = {
+  
+  //Main generate function
+  def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String =
+    prog.contents.map{
+      case function: FunctionDec => generateFunctionDec(function, varEnv, funEnv) 
+      case variable: VariableDec => generateVariableDec(variable, varEnv, funEnv) 
+    } mkString "\n\n"
+  
+  def generateFunctionDec(functionDec: FunctionDec, varEnv: VarEnv, funEnv: FunEnv): String = {
     val ts = 
       functionDec.returnType match {
         case None => "void"
-        case Some(t) => generateType(t)
+        case Some(t) => generateType(t, varEnv, funEnv)
       }
       
     val returnType = ts
     val funcName = functionDec.identifier
 
     val params = (functionDec.parameters.map({
-      case (typ, name) => typ + " " + name
+      case (typ, name) => generateType(typ, varEnv, funEnv) + " " + name
     }).mkString("(", ", ", ")"))
 
-    val body = "{" + functionDec.statement + "}"
+    val body = "{\n" + functionDec.statements.map(generateStatement(varEnv, funEnv)).mkString("\n") + "\n}"
 
     returnType + " " + funcName + params + body
   }
   
-  def generateVariableDec(variableDec: VariableDec): String =
-    generateType(variableDec.variableType) + " " + variableDec.identifier 
+  def generateVariableDec(variableDec: VariableDec, varEnv: VarEnv, funEnv: FunEnv): String = {
+    varEnv += variableDec.identifier -> (variableDec.variableType, 0)
+    generateType(variableDec.variableType, varEnv, funEnv) + " " + variableDec.identifier 
+  }
   
     
-  def genereateBlockDec(bd: BlockDec): String =
+  /*def generateBlockDec(varEnv: VarEnv, funEnv: FunEnv)(bd: BlockDec): String =
     bd match {
-      case BlockStatement(statement) => generateStatement(statement)
-      case LocalVariable(varType, identifier) => generateType(varType) + " " + identifier
-    }
+      case BlockStatement(statement) => generateStatement(statement, varEnv, funEnv)
+      case LocalVariable(varType, identifier) => generateType(varType, varEnv, funEnv) + " " + identifier
+    }*/
     
-  def generateStatement(stmt: Statement): String =
+  def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
     stmt match {
-      case Block (contents) => ""
-      case ExpressionStatement (expr) => generateExpr(expr) + ";"
+      case LocalVariable(varType, identifier) => generateType(varType, varEnv, funEnv) + " " + identifier
+      case Block (contents) => "{\n" + contents.map(generateStatement(varEnv, funEnv)) + "\n}"
+      case ExpressionStatement (expr) => generateExpr(varEnv, funEnv)(expr) + ";"
       case If (condition, trueBranch, falseBranch) => 
-        "if(" + generateExpr(condition) + ")\n" +
-        generateStatement(trueBranch) + "\n" +
+        "if(" + generateExpr(varEnv, funEnv)(condition) + ")\n" +
+        generateStatement(varEnv, funEnv)(trueBranch) + "\n" +
         "else\n" +
-        generateStatement(falseBranch) + "\n"
+        generateStatement(varEnv, funEnv)(falseBranch) + "\n"
       case While (condition, contents) => 
-        "while(" + generateExpr(condition) + ")" +
-        generateStatement(contents)
-      case Return (returnExpression) => returnExpression.map(generateExpr).getOrElse("") + ";"
+        "while(" + generateExpr(varEnv, funEnv)(condition) + ")" +
+        generateStatement(varEnv, funEnv)(contents)
+      case Return (returnExpression) => "return" + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
     }
     
-  def generateType(t: Type) : String = 
+  def generateType(t: Type, varEnv: VarEnv, funEnv: FunEnv) : String = 
     t match {
       case TypeInteger => "int"
       case TypeChar => "char"
-      case TypePointer(t) => generateType(t) + "*"
-      case TypeArray(t, None) => generateType(t) + "[]"
-      case TypeArray(t, Some(l)) => generateType(t) + "[" + l + "]"
+      case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
+      case TypeArray(t, None) => generateType(t, varEnv, funEnv) + "[]"
+      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"
     }
   
-  def generateUnaryOp(ope: UnaryOp): String =
+  def generateUnaryOp(ope: UnaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
     ope match {
       case UnaryDecrement => "--"
       case UnaryIncrement => "++"
     }
   
-  def generateBinaryOp(ope: BinaryOp): String =
+  def generateBinaryOp(ope: BinaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
     ope match {
       case BinaryPlus => "+"
       case BinaryMinus => "-"
@@ -166,38 +185,52 @@ trait Generator extends C {
     }
     
     
-  def generateExpr(e: Expression): String =
+  def generateExpr(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
     e match {
-      case AccessExpr(access) => generateAccess(access)
-      case Assign(access, expr) => generateAccess(access) + "=" + generateExpr(expr)
+      case AccessExpr(access) => generateAccess(access, varEnv, funEnv)
+      case Assign(access, expr) => 
+        generateAccess(access, varEnv, funEnv) + "=" + generateExpr(varEnv, funEnv)(expr)
       case Address(access) => ""
       case ConstantInteger(i) => i.toString()
-      case UnaryPrim(operator, expr) => generateUnaryOp(operator) + generateExpr(expr)
-      case BinaryPrim(operator, expr1, expr2) => generateExpr(expr1) + " " + generateBinaryOp(operator) + " " + generateExpr(expr2)
-      case SeqAnd(expr1, expr2) => generateExpr(expr1) + " && " + generateExpr(expr2)
-      case SeqOr(expr1, expr2) => generateExpr(expr1) + " || " + generateExpr(expr2)
+      case UnaryPrim(operator, expr) => 
+        generateUnaryOp(operator, varEnv, funEnv) + generateExpr(varEnv, funEnv)(expr)
+      case BinaryPrim(operator, expr1, expr2) => 
+        generateExpr(varEnv, funEnv)(expr1) + " " + generateBinaryOp(operator, varEnv, funEnv) + " " + generateExpr(varEnv, funEnv)(expr2)
+      case SeqAnd(expr1, expr2) => 
+        generateExpr(varEnv, funEnv)(expr1) + " && " + generateExpr(varEnv, funEnv)(expr2)
+      case SeqOr(expr1, expr2) => 
+        generateExpr(varEnv, funEnv)(expr1) + " || " + generateExpr(varEnv, funEnv)(expr2)
       case Call(identifier, args) => identifier + args.mkString("(", ", ", ")")
-      case ConditionExpression(expr1, expr2, expr3) => generateExpr(expr1) + " ? " + generateExpr(expr2) + " : " + generateExpr(expr3)
-      case Cast(expr, newType) => "(" + generateType(newType) + ") " + generateExpr(expr)
+      case ConditionExpression(expr1, expr2, expr3) => 
+        generateExpr(varEnv, funEnv)(expr1) + " ? " + generateExpr(varEnv, funEnv)(expr2) + " : " + generateExpr(varEnv, funEnv)(expr3)
+      case Cast(expr, newType) => 
+        "(" + generateType(newType, varEnv, funEnv) + ") " + generateExpr(varEnv, funEnv)(expr)
     }
   
   
-  def generateAccess(a: Access): String =
+  def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
     a match {
-      case AccessVariable(identifier) => ""
-      case AccessDeref(expr) => "*" + generateExpr(expr)
-      case AccessIndex(access, expr) => generateAccess(access) + "[" + generateExpr(expr) + "]"
+      case AccessNewLocVar(locVar) => generateStatement(varEnv, funEnv)(locVar)
+      case AccessVariable(identifier) => identifier
+      case AccessDeref(expr) => "*" + generateExpr(varEnv, funEnv)(expr)
+      case AccessIndex(access, expr) => generateAccess(access, varEnv, funEnv) + "[" + generateExpr(varEnv, funEnv)(expr) + "]"
     }
     
   
-  
-  /*s match {
-      case Block (ss) => ss.map(generate).mkString("{",";","}")
-    }*/
 }
 
 object Test extends Generator with App {
-  //println(generate(Program(List(VariableDec(TypeInteger(), "kage"), FunctionDec(TypeInteger, "jens", List(Tuple2(TypeInterger, "antal")), )))))
+  
+  def mainFunctionTest: Program = {
+    val locVarAss = new ExpressionStatement(Assign(new AccessNewLocVar(LocalVariable(TypeInteger, "testVar")), ConstantInteger(2)))
+ 
+    val statements = List(locVarAss, If(ConstantInteger(1), Return(Some(ConstantInteger(2))), Return(Some(ConstantInteger(5)))))
+    val func = FunctionDec(None, "main", List((TypePointer(TypePointer(TypeChar)), "args")), statements) 
+
+    Program(List(func))
+  }
+  
+  println(generate(mainFunctionTest, new VarEnv, new FunEnv))
 }
 
 
