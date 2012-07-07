@@ -26,17 +26,20 @@ furnished to do so, subject to the following conditions:
 
 package dk.itu.c
 import scala.collection.mutable.HashMap
+import scala.dbc.syntax.StatementExpression
 
 
 trait C {
   
-  case class CASTException extends Exception
-  case class UnknownVariableException(smth:String)  extends CASTException
+  case class CASTException(smth:String) extends Exception(smth)
+  case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
+  case class VariableRedefinitionException(smth1:String) extends CASTException(smth1)
+  case class FunctionRedefinitionException(smth1: String) extends CASTException(smth1)
   
-  //Variable environment: Map from identifier to tuple of variable type and declaration level
-  type VarEnv = HashMap[String, (Type, Integer)] 
+  //Variable environment: Map from identifier to variable type
+  type VarEnv = Map[String, Type] 
   //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = HashMap[String, (Type, ArgList)]
+  type FunEnv = Map[String, (Option[Type], ArgList)]
   //Argument list
   type ArgList = List[(Type, String)]  
   
@@ -45,22 +48,23 @@ trait C {
   
   //Top level declaration
   sealed abstract class TopDec
-  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, statements: List[Statement]) extends TopDec
+  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, statements: List[StmtOrDec]) extends TopDec
   case class VariableDec (variableType: Type, identifier: String) extends TopDec
   
   //Declarations inside a block
-  /*sealed abstract class BlockDec
-  case class BlockStatement (statement: Statement) extends BlockDec
-  case class LocalVariable (variableType: Type, identifier: String) extends BlockDec*/
+  sealed abstract class StmtOrDec
+  case class Stmt (statement: Statement) extends StmtOrDec
+  case class LocalVariable (variableType: Type, identifier: String) extends StmtOrDec //int x;
+  case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends StmtOrDec //int x = e;
   
   //C statements
   sealed abstract class Statement
-  case class LocalVariable (variableType: Type, identifier: String) extends Statement
-  case class Block (contents: List[Statement]) extends Statement
+  case class Block (contents: List[StmtOrDec]) extends Statement
   case class ExpressionStatement (expr: Expression) extends Statement
   case class If (condition: Expression, trueBranch: Statement, falseBranch: Statement) extends Statement
   case class While (condition: Expression, contents: Statement) extends Statement
   case class Return (returnExpression: Option[Expression]) extends Statement
+  case class Switch (condition: Expression)
   
   //C types
   sealed abstract class Type
@@ -97,7 +101,6 @@ trait C {
 
   //C variable access
   sealed abstract class Access
-  case class AccessNewLocVar(locVar: LocalVariable) extends Access //Variable access when var just declared: int i = 2;
   case class AccessVariable (ident: String) extends Access //Variable access  ident
   case class AccessDeref (expr: Expression) extends Access //Pointer dereferencing  *p
   case class AccessIndex (access: Access, expr: Expression) extends Access //Access Array indexing  a[e]  
@@ -115,40 +118,74 @@ trait Generator extends C {
     } mkString "\n\n"
   
   def generateFunctionDec(functionDec: FunctionDec, varEnv: VarEnv, funEnv: FunEnv): String = {
+      
+    //Fail if already defined else add to environment  
+    if(funEnv.exists(_._1.equals(functionDec.identifier)))
+      throw new FunctionRedefinitionException("Redifinition of function " + functionDec.identifier)
+    
+    val funEnv1 = funEnv + (functionDec.identifier -> (functionDec.returnType, functionDec.parameters))
+      
     val ts = 
       functionDec.returnType match {
         case None => "void"
-        case Some(t) => generateType(t, varEnv, funEnv)
+        case Some(t) => generateType(t, varEnv, funEnv1)
       }
       
     val returnType = ts
     val funcName = functionDec.identifier
 
     val params = (functionDec.parameters.map({
-      case (typ, name) => generateType(typ, varEnv, funEnv) + " " + name
+      case (typ, name) => generateType(typ, varEnv, funEnv1) + " " + name
     }).mkString("(", ", ", ")"))
 
-    val body = "{\n" + functionDec.statements.map(generateStatement(varEnv, funEnv)).mkString("\n") + "\n}"
+    
+    
+    val body = "{\n" + stmtOrDecLoop(varEnv, funEnv)(functionDec.statements)._1 + "\n}"
 
     returnType + " " + funcName + params + body
   }
   
   def generateVariableDec(variableDec: VariableDec, varEnv: VarEnv, funEnv: FunEnv): String = {
-    varEnv += variableDec.identifier -> (variableDec.variableType, 0)
-    generateType(variableDec.variableType, varEnv, funEnv) + " " + variableDec.identifier 
+    val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
+    generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier 
   }
   
+  
+  def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (String, VarEnv) = {
+      stmtsordecs match {
+        case Nil => ("", varEnv)
+      	case head :: tail =>
+          val (retString, varEnv1) = generateStmtOrDec(varEnv, funEnv)(head)
+          val (resStringFinal, varEnvFinal) = stmtOrDecLoop(varEnv1, funEnv)(tail)
+          (retString + "\n" + resStringFinal, varEnvFinal)
+      }
+    }
     
-  /*def generateBlockDec(varEnv: VarEnv, funEnv: FunEnv)(bd: BlockDec): String =
-    bd match {
-      case BlockStatement(statement) => generateStatement(statement, varEnv, funEnv)
-      case LocalVariable(varType, identifier) => generateType(varType, varEnv, funEnv) + " " + identifier
-    }*/
+  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (String, VarEnv) =
+    sord match {
+      case Stmt(statement) => (generateStatement(varEnv, funEnv)(statement), varEnv)
+      case LocalVariable(varType, identifier) => 
+        if(varEnv.exists(_._1.equals(identifier)))
+          throw new VariableRedefinitionException("Variable " + identifier + " has already been defined")
+        else {
+          val varEnv1 = varEnv + (identifier -> varType)
+          val retString = generateType(varType, varEnv1, funEnv) + " " + identifier + ";"
+          (retString, varEnv1)
+        }
+      case LocalVariableWithAssign(varType, ident, expr) =>
+        if(varEnv.exists(_._1.equals(ident)))
+          throw new VariableRedefinitionException("Variable " + ident + " has already been defined")
+        else {
+          val varEnv1 = varEnv + (ident -> varType)
+          val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
+          (retString, varEnv1)
+        }
+    }
     
   def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
     stmt match {
-      case LocalVariable(varType, identifier) => generateType(varType, varEnv, funEnv) + " " + identifier
-      case Block (contents) => "{\n" + contents.map(generateStatement(varEnv, funEnv)) + "\n}"
+      case Block (contents) => 
+        "{\n" + stmtOrDecLoop(varEnv, funEnv)(contents)._1 + "\n}"
       case ExpressionStatement (expr) => generateExpr(varEnv, funEnv)(expr) + ";"
       case If (condition, trueBranch, falseBranch) => 
         "if(" + generateExpr(varEnv, funEnv)(condition) + ")\n" +
@@ -158,7 +195,7 @@ trait Generator extends C {
       case While (condition, contents) => 
         "while(" + generateExpr(varEnv, funEnv)(condition) + ")" +
         generateStatement(varEnv, funEnv)(contents)
-      case Return (returnExpression) => "return" + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
+      case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
     }
     
   def generateType(t: Type, varEnv: VarEnv, funEnv: FunEnv) : String = 
@@ -189,7 +226,7 @@ trait Generator extends C {
     e match {
       case AccessExpr(access) => generateAccess(access, varEnv, funEnv)
       case Assign(access, expr) => 
-        generateAccess(access, varEnv, funEnv) + "=" + generateExpr(varEnv, funEnv)(expr)
+        generateAccess(access, varEnv, funEnv) + " = " + generateExpr(varEnv, funEnv)(expr)
       case Address(access) => ""
       case ConstantInteger(i) => i.toString()
       case UnaryPrim(operator, expr) => 
@@ -210,8 +247,11 @@ trait Generator extends C {
   
   def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
     a match {
-      case AccessNewLocVar(locVar) => generateStatement(varEnv, funEnv)(locVar)
-      case AccessVariable(identifier) => identifier
+      case AccessVariable(identifier) => 
+        if(varEnv.exists(_._1.equals(identifier)))
+          identifier
+        else
+          throw new UnknownVariableException("The variable " + identifier + " does not exist in the current scope.")
       case AccessDeref(expr) => "*" + generateExpr(varEnv, funEnv)(expr)
       case AccessIndex(access, expr) => generateAccess(access, varEnv, funEnv) + "[" + generateExpr(varEnv, funEnv)(expr) + "]"
     }
@@ -219,19 +259,6 @@ trait Generator extends C {
   
 }
 
-object Test extends Generator with App {
-  
-  def mainFunctionTest: Program = {
-    val locVarAss = new ExpressionStatement(Assign(new AccessNewLocVar(LocalVariable(TypeInteger, "testVar")), ConstantInteger(2)))
- 
-    val statements = List(locVarAss, If(ConstantInteger(1), Return(Some(ConstantInteger(2))), Return(Some(ConstantInteger(5)))))
-    val func = FunctionDec(None, "main", List((TypePointer(TypePointer(TypeChar)), "args")), statements) 
-
-    Program(List(func))
-  }
-  
-  println(generate(mainFunctionTest, new VarEnv, new FunEnv))
-}
 
 
 
