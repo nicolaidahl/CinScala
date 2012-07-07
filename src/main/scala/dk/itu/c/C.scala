@@ -29,95 +29,22 @@ import scala.collection.mutable.HashMap
 import scala.dbc.syntax.StatementExpression
 
 
-trait C {
+trait Generator extends CAbstractSyntax {
   
   case class CASTException(smth:String) extends Exception(smth)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
   case class VariableRedefinitionException(smth1:String) extends CASTException(smth1)
   case class FunctionRedefinitionException(smth1: String) extends CASTException(smth1)
   
-  //Variable environment: Map from identifier to variable type
-  type VarEnv = Map[String, Type] 
-  //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = Map[String, (Option[Type], ArgList)]
-  //Argument list
-  type ArgList = List[(Type, String)]  
-  
-  
-  case class Program (contents: List[TopDec])
-  
-  //Top level declaration
-  sealed abstract class TopDec
-  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, statements: List[StmtOrDec]) extends TopDec
-  case class VariableDec (variableType: Type, identifier: String) extends TopDec
-  
-  //Declarations inside a block
-  sealed abstract class StmtOrDec
-  case class Stmt (statement: Statement) extends StmtOrDec
-  case class LocalVariable (variableType: Type, identifier: String) extends StmtOrDec //int x;
-  case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends StmtOrDec //int x = e;
-  
-  //C statements
-  sealed abstract class Statement
-  case class Block (contents: List[StmtOrDec]) extends Statement
-  case class ExpressionStatement (expr: Expression) extends Statement
-  case class If (condition: Expression, trueBranch: Statement, falseBranch: Statement) extends Statement
-  case class While (condition: Expression, contents: Statement) extends Statement
-  case class Return (returnExpression: Option[Expression]) extends Statement
-  case class Switch (condition: Expression)
-  
-  //C types
-  sealed abstract class Type
-  case object TypeInteger extends Type
-  case object TypeChar extends Type
-  case class TypeArray (arrayType: Type, length: Option[Integer]) extends Type
-  case class TypePointer (pointerType: Type) extends Type
-  
-  //C Unary operators
-  sealed abstract class UnaryOp
-  case object UnaryDecrement extends UnaryOp
-  case object UnaryIncrement extends UnaryOp
-
-  //C Binary Operators
-  sealed abstract class BinaryOp
-  case object BinaryPlus extends BinaryOp
-  case object BinaryMinus extends BinaryOp
-  case object BinaryTimes extends BinaryOp
-  case object BinaryDivide extends BinaryOp
-  
-  //C Expressions
-  sealed abstract class Expression
-  case class AccessExpr (access: Access) extends Expression //x    or  *p    or  a[e]
-  case class Assign (access: Access, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
-  case class Address (access: Access) extends Expression //&x   or  &*p   or  &a[e] 
-  case class ConstantInteger (contents: Integer) extends Expression
-  case class UnaryPrim (operator: UnaryOp, expression: Expression) extends Expression //Unary primitive operator
-  case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends Expression //Binary primitive operator
-  case class SeqAnd (expr1: Expression, expr2: Expression) extends Expression //Sequential and &&
-  case class SeqOr (expr1: Expression, expr2: Expression) extends Expression //Sequential or ||
-  case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
-  case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
-  case class Cast(expression: Expression, newType: Type) extends Expression //(int) a;
-
-  //C variable access
-  sealed abstract class Access
-  case class AccessVariable (ident: String) extends Access //Variable access  ident
-  case class AccessDeref (expr: Expression) extends Access //Pointer dereferencing  *p
-  case class AccessIndex (access: Access, expr: Expression) extends Access //Access Array indexing  a[e]  
-}
-
-trait Generator extends C {
-  
-  
-  
   //Main generate function
   def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String =
     prog.contents.map{
-      case function: FunctionDec => generateFunctionDec(function, varEnv, funEnv) 
+      case function: FunctionDec => 
+        generateFunctionDec(function, varEnv, funEnv)._1
       case variable: VariableDec => generateVariableDec(variable, varEnv, funEnv) 
     } mkString "\n\n"
   
-  def generateFunctionDec(functionDec: FunctionDec, varEnv: VarEnv, funEnv: FunEnv): String = {
+  def generateFunctionDec(functionDec: FunctionDec, varEnv: VarEnv, funEnv: FunEnv): (String, FunEnv) = {
       
     //Fail if already defined else add to environment  
     if(funEnv.exists(_._1.equals(functionDec.identifier)))
@@ -137,12 +64,10 @@ trait Generator extends C {
     val params = (functionDec.parameters.map({
       case (typ, name) => generateType(typ, varEnv, funEnv1) + " " + name
     }).mkString("(", ", ", ")"))
-
     
-    
-    val body = "{\n" + stmtOrDecLoop(varEnv, funEnv)(functionDec.statements)._1 + "\n}"
+    val body = "{\n" + stmtOrDecLoop(varEnv, funEnv1)(functionDec.stmtOrDecs)._1 + "\n}"
 
-    returnType + " " + funcName + params + body
+    (returnType + " " + funcName + params + body, funEnv1)
   }
   
   def generateVariableDec(variableDec: VariableDec, varEnv: VarEnv, funEnv: FunEnv): String = {
@@ -187,11 +112,36 @@ trait Generator extends C {
       case Block (contents) => 
         "{\n" + stmtOrDecLoop(varEnv, funEnv)(contents)._1 + "\n}"
       case ExpressionStatement (expr) => generateExpr(varEnv, funEnv)(expr) + ";"
-      case If (condition, trueBranch, falseBranch) => 
-        "if(" + generateExpr(varEnv, funEnv)(condition) + ")\n" +
-        generateStatement(varEnv, funEnv)(trueBranch) + "\n" +
-        "else\n" +
-        generateStatement(varEnv, funEnv)(falseBranch) + "\n"
+      case If (condition, ifBranch, elseIfBranches, elseBranch) => 
+        val ifStr = 
+          "if(" + generateExpr(varEnv, funEnv)(condition) + ")\n{\n" +
+          stmtOrDecLoop(varEnv, funEnv)(ifBranch)._1 + "}\n" 
+        val elseBranchesStr = 
+          elseIfBranches match {
+            case None => ""
+            case Some(bs) => bs.map(b => "else if(" + generateExpr(varEnv, funEnv)(b._1) + ")\n{\n" + stmtOrDecLoop(varEnv, funEnv)(b._2)._1) + "\n}\n"
+          }
+        
+        val elseStr = 
+          elseBranch match {
+            case None => ""
+            case Some(s) => "else\n{\n" + stmtOrDecLoop(varEnv, funEnv)(s)._1 + "}\n"
+          }
+          
+        ifStr + elseBranchesStr + elseStr
+      case Switch (expr, cases, default) =>
+        def generateCase(aCase: (Expression, List[StmtOrDec])): String = 
+          "case " + generateExpr(varEnv, funEnv)(aCase._1) + ":\n" + stmtOrDecLoop(varEnv, funEnv)(aCase._2)._1 + "break;\n"
+        
+        val switchStr = "switch(" + generateExpr(varEnv, funEnv)(expr) + "){\n"
+        val casesStr = cases.map(generateCase).mkString
+        val defaultStr = 
+          default match {
+            case None => ""
+            case Some(l) => "default: \n" + stmtOrDecLoop(varEnv, funEnv)(l)._1 +"\nbreak;\n"
+          }
+        
+        switchStr + casesStr + defaultStr + "}\n"
       case While (condition, contents) => 
         "while(" + generateExpr(varEnv, funEnv)(condition) + ")" +
         generateStatement(varEnv, funEnv)(contents)
@@ -237,7 +187,10 @@ trait Generator extends C {
         generateExpr(varEnv, funEnv)(expr1) + " && " + generateExpr(varEnv, funEnv)(expr2)
       case SeqOr(expr1, expr2) => 
         generateExpr(varEnv, funEnv)(expr1) + " || " + generateExpr(varEnv, funEnv)(expr2)
-      case Call(identifier, args) => identifier + args.map(generateExpr(varEnv, funEnv)).mkString("(", ", ", ")")
+      case Call(identifier, args) => 
+        if(!funEnv.exists(_._1.equals(identifier)))
+          printf("Warning: Function " + identifier + " is unknown.\n\n")
+        identifier + args.map(generateExpr(varEnv, funEnv)).mkString("(", ", ", ")")
       case ConditionExpression(expr1, expr2, expr3) => 
         generateExpr(varEnv, funEnv)(expr1) + " ? " + generateExpr(varEnv, funEnv)(expr2) + " : " + generateExpr(varEnv, funEnv)(expr3)
       case Cast(expr, newType) => 

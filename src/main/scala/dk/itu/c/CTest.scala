@@ -6,16 +6,16 @@ object Test extends Generator with App {
   def getEmptyVarEnv: Map[String, Type] = Map.empty[String, Type]
   def getEmptyFunEnv: Map[String, (Option[Type], ArgList)] = Map.empty[String, (Option[Type], ArgList)]
   
-  def mainFunctionWrapper(stmtOrDecs: List[StmtOrDec]): FunctionDec =
+  def generateMainFunction(stmtOrDecs: List[StmtOrDec]): FunctionDec =
     FunctionDec(Some(TypeInteger), "main", List((TypeInteger, "argc"), (TypePointer(TypePointer(TypeChar)), "args")), stmtOrDecs)
   
   //Tests the main function generation with if and return statements
   def mainFunctionTest: Program = {
 	val locVarAss = new LocalVariableWithAssign(TypeInteger, "testVar", ConstantInteger(2))
-	val ifstmt = If(AccessExpr(AccessVariable("testVar")), Return(Some(ConstantInteger(2))), Return(Some(ConstantInteger(5))))
+	val ifstmt = If(AccessExpr(AccessVariable("testVar")), List(Stmt(Return(Some(ConstantInteger(2))))), None, Some(List(Stmt(Return(Some(ConstantInteger(5)))))))
     
     val statements = List(locVarAss, Stmt(ifstmt))
-    val mainFunc = mainFunctionWrapper(statements)
+    val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
   }
@@ -28,7 +28,7 @@ object Test extends Generator with App {
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar2", ConstantInteger(3))
     
     val statements = List(locVar, Stmt(ExpressionStatement(assign)), locVar2)
-    val mainFunc = mainFunctionWrapper(statements)
+    val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
   }
@@ -43,7 +43,7 @@ object Test extends Generator with App {
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
     
     val statements = List(Stmt(block), Stmt(Return(Some(assign))))
-    val mainFunc = mainFunctionWrapper(statements)
+    val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
 
@@ -57,7 +57,7 @@ object Test extends Generator with App {
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar", ConstantInteger(3))
     
     val statements = List(locVar, Stmt(ExpressionStatement(assign)), locVar2)
-    val mainFunc = mainFunctionWrapper(statements)
+    val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
 
@@ -75,12 +75,43 @@ object Test extends Generator with App {
     
     val funcCall = Call("testFunction", List(ConstantInteger(2)))
     val mainStatements = List(Stmt(ExpressionStatement(funcCall)))
-    val mainFunc = mainFunctionWrapper(mainStatements)
+    val mainFunc = generateMainFunction(mainStatements)
     
     Program(List(testFun, mainFunc))
 
   }
-  println(generate(multipleFunctions, getEmptyVarEnv, getEmptyFunEnv))
+  //println(generate(multipleFunctions, getEmptyVarEnv, getEmptyFunEnv))
+  
+  //Testing redefinition of function
+  def redefinitionOfFunction: Program = {
+    
+    val testFun = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
+    val testFun2 = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
+    
+    val funcCall = Call("testFunction", List(ConstantInteger(2)))
+    val mainStatements = List(Stmt(ExpressionStatement(funcCall)))
+    val mainFunc = generateMainFunction(mainStatements)
+    
+    Program(List(testFun, testFun2, mainFunc))
+
+  }
+  //println(generate(redefinitionOfFunction, getEmptyVarEnv, getEmptyFunEnv))
+  
+  //Testing switch case statement
+  def switchTest: Program = {
+    
+	val ifstmt = If(ConstantInteger(1), List(Stmt(Return(Some(ConstantInteger(2))))), None, Some(List(Stmt(Return(Some(ConstantInteger(5)))))))
+    val plusExpr = BinaryPrim(BinaryPlus, ConstantInteger(2), ConstantInteger(4))
+	
+	val switchCase = Switch(ConstantInteger(1), List((ConstantInteger(1), List(Stmt(ExpressionStatement(plusExpr))))), Some(List(Stmt(ifstmt))))
+	
+    val mainStatements = List(Stmt(switchCase))
+    val mainFunc = generateMainFunction(mainStatements)
+    
+    Program(List(mainFunc))
+
+  }
+  println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
   
   
 }
