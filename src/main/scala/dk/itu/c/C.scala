@@ -36,18 +36,40 @@ trait Generator extends CAbstractSyntax {
   case class VariableRedefinitionException(smth1:String) extends CASTException(smth1)
   case class FunctionRedefinitionException(smth1: String) extends CASTException(smth1)
   
-  //Main generate function
-  def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String =
-    prog.contents.map{
-      case function: FunctionDec => 
-        generateFunctionDec(function, varEnv, funEnv)._1
-      case variable: VariableDec => generateVariableDec(variable, varEnv, funEnv) 
-    } mkString "\n\n"
   
-  def generateFunctionDec(functionDec: FunctionDec, varEnv: VarEnv, funEnv: FunEnv): (String, FunEnv) = {
+  def lookupVar(varEnv: VarEnv, identifier: String): Boolean =
+    varEnv.exists(_._1.equals(identifier))
+  
+  def lookupFunc(funEnv: FunEnv, identifier: String): Boolean =
+    funEnv.exists(_._1.equals(identifier))
+  
+  //Main generate function
+  def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
+    def loop (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) = {
+      topDecs match {
+        case Nil => (varEnv, funEnv, "")
+        case head :: tail =>
+          head match {
+            case variable: VariableDec =>
+              val (varEnv1, str) = generateVariableDec(varEnv, funEnv, variable)
+              val (varEnv2, funEnv1, str1) = loop(varEnv1, funEnv)(tail)
+              (varEnv2, funEnv1, str + str1)
+            case function: FunctionDec => 
+              val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
+              val (varEnv1, funEnv2, str1) = loop(varEnv, funEnv1)(tail)
+              (varEnv1, funEnv2, str + str1)
+          }
+      }
+      
+      
+    }
+    loop(varEnv, funEnv)(prog.contents)._3
+  }
+  
+  def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: FunctionDec): (FunEnv, String) = {
       
     //Fail if already defined else add to environment  
-    if(funEnv.exists(_._1.equals(functionDec.identifier)))
+    if(lookupFunc(funEnv, functionDec.identifier))
       throw new FunctionRedefinitionException("Redifinition of function " + functionDec.identifier)
     
     val funEnv1 = funEnv + (functionDec.identifier -> (functionDec.returnType, functionDec.parameters))
@@ -67,12 +89,15 @@ trait Generator extends CAbstractSyntax {
     
     val body = "{\n" + stmtOrDecLoop(varEnv, funEnv1)(functionDec.stmtOrDecs)._1 + "\n}"
 
-    (returnType + " " + funcName + params + body, funEnv1)
+    (funEnv1, returnType + " " + funcName + params + body)
   }
   
-  def generateVariableDec(variableDec: VariableDec, varEnv: VarEnv, funEnv: FunEnv): String = {
+  
+
+  
+  def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: VariableDec): (VarEnv, String) = {
     val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
-    generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier 
+    (varEnv1, generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier) 
   }
   
   
@@ -90,7 +115,7 @@ trait Generator extends CAbstractSyntax {
     sord match {
       case Stmt(statement) => (generateStatement(varEnv, funEnv)(statement), varEnv)
       case LocalVariable(varType, identifier) => 
-        if(varEnv.exists(_._1.equals(identifier)))
+        if(lookupVar(varEnv, identifier))
           throw new VariableRedefinitionException("Variable " + identifier + " has already been defined")
         else {
           val varEnv1 = varEnv + (identifier -> varType)
@@ -98,7 +123,7 @@ trait Generator extends CAbstractSyntax {
           (retString, varEnv1)
         }
       case LocalVariableWithAssign(varType, ident, expr) =>
-        if(varEnv.exists(_._1.equals(ident)))
+        if(lookupVar(varEnv, ident))
           throw new VariableRedefinitionException("Variable " + ident + " has already been defined")
         else {
           val varEnv1 = varEnv + (ident -> varType)
@@ -188,7 +213,7 @@ trait Generator extends CAbstractSyntax {
       case SeqOr(expr1, expr2) => 
         generateExpr(varEnv, funEnv)(expr1) + " || " + generateExpr(varEnv, funEnv)(expr2)
       case Call(identifier, args) => 
-        if(!funEnv.exists(_._1.equals(identifier)))
+        if(!lookupFunc(funEnv, identifier))
           printf("Warning: Function " + identifier + " is unknown.\n\n")
         identifier + args.map(generateExpr(varEnv, funEnv)).mkString("(", ", ", ")")
       case ConditionExpression(expr1, expr2, expr3) => 
@@ -201,7 +226,7 @@ trait Generator extends CAbstractSyntax {
   def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
     a match {
       case AccessVariable(identifier) => 
-        if(varEnv.exists(_._1.equals(identifier)))
+        if(lookupVar(varEnv, identifier))
           identifier
         else
           throw new UnknownVariableException("The variable " + identifier + " does not exist in the current scope.")
