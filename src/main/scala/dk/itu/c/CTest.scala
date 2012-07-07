@@ -50,7 +50,7 @@ object Test extends Generator with App {
   }
   //println(generate(variableScope, getEmptyVarEnv, getEmptyFunEnv))
   
-  //Testing testing redefinition of variable
+  //Testing redefinition of variable
   def variableRedefinition: Program = {
     val locVar = LocalVariable(TypeInteger, "testVar")
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
@@ -64,7 +64,7 @@ object Test extends Generator with App {
   }
   //println(generate(variableRedefinition, getEmptyVarEnv, getEmptyFunEnv))
   
-  //Testing testing redefinition of variable
+  //Testing call of function in scope
   def multipleFunctions: Program = {
     val locVar = LocalVariable(TypeInteger, "testVar")
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
@@ -77,10 +77,10 @@ object Test extends Generator with App {
     val mainStatements = List(Stmt(ExpressionStatement(funcCall)))
     val mainFunc = mainFunctionWrapper(mainStatements)
     
-    Program(List(mainFunc))
+    Program(List(testFun, mainFunc))
 
   }
-  println(generate(variableRedefinition, getEmptyVarEnv, getEmptyFunEnv))
+  println(generate(multipleFunctions, getEmptyVarEnv, getEmptyFunEnv))
   
   
 }

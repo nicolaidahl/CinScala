@@ -237,7 +237,7 @@ trait Generator extends C {
         generateExpr(varEnv, funEnv)(expr1) + " && " + generateExpr(varEnv, funEnv)(expr2)
       case SeqOr(expr1, expr2) => 
         generateExpr(varEnv, funEnv)(expr1) + " || " + generateExpr(varEnv, funEnv)(expr2)
-      case Call(identifier, args) => identifier + args.mkString("(", ", ", ")")
+      case Call(identifier, args) => identifier + args.map(generateExpr(varEnv, funEnv)).mkString("(", ", ", ")")
       case ConditionExpression(expr1, expr2, expr3) => 
         generateExpr(varEnv, funEnv)(expr1) + " ? " + generateExpr(varEnv, funEnv)(expr2) + " : " + generateExpr(varEnv, funEnv)(expr3)
       case Cast(expr, newType) => 
