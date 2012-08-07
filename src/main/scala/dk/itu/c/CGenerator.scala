@@ -28,8 +28,10 @@ package dk.itu.c
 import scala.collection.mutable.HashMap
 import scala.dbc.syntax.StatementExpression
 
-
-trait Generator extends CAbstractSyntax {
+trait CGenerator extends CAbstractSyntax {
+  
+  def getEmptyVarEnv: Map[String, Type] = Map.empty[String, Type]
+  def getEmptyFunEnv: Map[String, (Option[Type], ArgList)] = Map.empty[String, (Option[Type], ArgList)]
   
   case class CASTException(smth:String) extends Exception(smth)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
@@ -45,7 +47,7 @@ trait Generator extends CAbstractSyntax {
   
   //Main generate function
   def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
-    def loop (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) = {
+    def loop (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) =
       topDecs match {
         case Nil => (varEnv, funEnv, "")
         case head :: tail =>
@@ -60,12 +62,13 @@ trait Generator extends CAbstractSyntax {
               (varEnv1, funEnv2, str + str1)
           }
       }
-      
-      
-    }
+    
     loop(varEnv, funEnv)(prog.contents)._3
   }
   
+  /**
+   * Generate a function declaration
+   */
   def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: FunctionDec): (FunEnv, String) = {
       
     //Fail if already defined else add to environment  
@@ -90,11 +93,11 @@ trait Generator extends CAbstractSyntax {
     val body = "{\n" + stmtOrDecLoop(varEnv, funEnv1)(functionDec.stmtOrDecs)._1 + "\n}"
 
     (funEnv1, returnType + " " + funcName + params + body)
-  }
-  
-  
+  }  
 
-  
+  /**
+   * Generate a variable declaration
+   */
   def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: VariableDec): (VarEnv, String) = {
     val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
     (varEnv1, generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier) 

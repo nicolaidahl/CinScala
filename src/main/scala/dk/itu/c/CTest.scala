@@ -1,10 +1,8 @@
 package dk.itu.c
 
 
-object Test extends Generator with App {
+object Test extends CCompileAndRun with App {
   
-  def getEmptyVarEnv: Map[String, Type] = Map.empty[String, Type]
-  def getEmptyFunEnv: Map[String, (Option[Type], ArgList)] = Map.empty[String, (Option[Type], ArgList)]
   
   def generateMainFunction(stmtOrDecs: List[StmtOrDec]): FunctionDec =
     FunctionDec(Some(TypeInteger), "main", List((TypeInteger, "argc"), (TypePointer(TypePointer(TypeChar)), "args")), stmtOrDecs)
@@ -111,7 +109,10 @@ object Test extends Generator with App {
     Program(List(mainFunc))
 
   }
-  println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
+  //println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
+  
+  println(compileAndRun(switchTest))
+  
   
   
 }
