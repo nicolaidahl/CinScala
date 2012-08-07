@@ -37,19 +37,21 @@ trait CAbstractSyntax {
   //Declaration specifier
   case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
   
-  
-  
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
   case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
   
-  sealed abstract class Declarator
-  case class DeclaratorWithPointer(pointer: Option[PointerTest], directDec: Declarator)
-  case class DirectDeclaratorWrapper(directDeclarator: DirectDeclarator)
+  case class Declarator(pointer: Option[PointerTest], directDeclarator: DirectDeclarator)
   
   sealed abstract class DirectDeclarator
+  case class Identifier(name: String) extends DirectDeclarator
+  case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
+  case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
+  case class ParameterList(directDeclarator: DirectDeclarator, ptlt: ParameterTypeListTest) //direct-declarator ( parameter-type-list ) 
+  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list opt )
   
   sealed abstract class PointerTest
+  sealed abstract class ParameterTypeListTest
   
   
   //Storage class
