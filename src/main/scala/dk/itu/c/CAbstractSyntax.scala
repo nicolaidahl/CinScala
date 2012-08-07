@@ -34,6 +34,7 @@ trait CAbstractSyntax {
   case class If (condition: Expression, ifBranch: List[StmtOrDec], elseIfBranches: Option[List[(Expression, List[StmtOrDec])]], elseBranch: Option[List[StmtOrDec]]) extends Statement
   case class Switch (switchExpr: Expression, cases: List[(Expression, List[StmtOrDec])], default: Option[List[StmtOrDec]]) extends Statement
   case class While (condition: Expression, contents: Statement) extends Statement
+  case class For (initialization: Expression, condition: Expression, counter: Expression, contents: Statement) extends Statement
   case class Return (returnExpression: Option[Expression]) extends Statement
   
   //C types

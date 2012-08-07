@@ -111,10 +111,31 @@ object Test extends CCompileAndRun with App {
   }
   //println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
   
-  println(compile(switchTest))
+  //println(compile(switchTest))
   
+  //Testing while and return
+  def whileReturnTest: Program = {
+     val whilestmt = While(BinaryPrim(BinaryLessThanOrEquals, ConstantInteger(5), ConstantInteger(6)), Block(List(Stmt(Return(Some(ConstantInteger(2)))))))
+    
+     val mainStatements = List(Stmt(whilestmt))
+     val mainFunc = generateMainFunction(mainStatements)
+    
+     Program(List(PrecompileInstr(IncludeStd("stdio.h")), mainFunc))
+  }
   
+  //println(compile(whileReturnTest))
   
+  // Testing for loops
+  def forTest: Program = {
+    val iassign = LocalVariable(TypeInteger, "i")
+    val forstmt = For(Assign(AccessVariable("i"), ConstantInteger(0)), BinaryPrim(BinaryLessThan, AccessExpr(AccessVariable("i")), ConstantInteger(5)), UnaryPrim(UnaryIncrement, AccessExpr(AccessVariable("i"))), Block(List(Stmt(Return(Some(ConstantInteger(0)))))))
+  
+    val mainStatements = List(iassign, Stmt(forstmt))
+    val mainFunc = generateMainFunction(mainStatements)
+    
+    Program(List(PrecompileInstr(IncludeStd("stdio.h")), mainFunc))
+  }
+  println(compile(forTest))
 }
 
 
