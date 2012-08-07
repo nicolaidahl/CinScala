@@ -73,8 +73,8 @@ trait CGenerator extends CAbstractSyntax {
   
   def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
-      case IncludeLoc(s) => "#include \"" + s + "\""
-      case IncludeStd(s) => "#include <" + s + ">"
+      case IncludeLoc(s) => "#include \"" + s + "\" \n"
+      case IncludeStd(s) => "#include <" + s + "> \n"
     }
   }
   
