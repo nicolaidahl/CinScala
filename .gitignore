@@ -16,3 +16,8 @@ project/plugins/project/
 .project
 .cache
 .DS_Store
+
+# C-stuff
+*.o
+*.so
+*.c

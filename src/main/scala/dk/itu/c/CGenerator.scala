@@ -55,8 +55,8 @@ trait CGenerator extends CAbstractSyntax {
   
   def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
-      case IncludeLoc(s) => "#include \"" + s + "\""
-      case IncludeStd(s) => "#include <" + s + ">"
+      case IncludeLoc(s) => "#include \"" + s + "\" \n"
+      case IncludeStd(s) => "#include <" + s + "> \n"
     }
   }
   
@@ -188,6 +188,12 @@ trait CGenerator extends CAbstractSyntax {
       case While (condition, contents) => 
         "while(" + generateExpr(varEnv, funEnv)(condition) + ")" +
         generateStatement(varEnv, funEnv)(contents)
+      case For (initialization, condition, counter, contents) =>
+        "for(" + generateExpr(varEnv, funEnv)(initialization) + ";" + generateExpr(varEnv, funEnv)(condition) + ";" + generateExpr(varEnv, funEnv)(counter) + ")" + 
+        generateStatement(varEnv, funEnv)(contents)
+      case DoWhile (contents, condition) =>
+        "do " + generateStatement(varEnv, funEnv)(contents) + "\n" +
+        "while(" + generateExpr(varEnv, funEnv)(condition) + ");"
       case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
     }
     
@@ -212,6 +218,11 @@ trait CGenerator extends CAbstractSyntax {
       case BinaryMinus => "-"
       case BinaryTimes => "*"
       case BinaryDivide => "/"
+      case BinaryEquals => "="
+      case BinaryLessThan => "<"
+      case BinaryLessThanOrEquals => "<="
+      case BinaryGreaterThan => ">"
+      case inaryGreaterThanOrEquals => ">="
     }
     
     

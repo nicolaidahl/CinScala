@@ -41,6 +41,8 @@ trait CAbstractSyntax {
   case class If (condition: Expression, ifBranch: List[StmtOrDec], elseIfBranches: Option[List[(Expression, List[StmtOrDec])]], elseBranch: Option[List[StmtOrDec]]) extends Statement
   case class Switch (switchExpr: Expression, cases: List[(Expression, List[StmtOrDec])], default: Option[List[StmtOrDec]]) extends Statement
   case class While (condition: Expression, contents: Statement) extends Statement
+  case class For (initialization: Expression, condition: Expression, counter: Expression, contents: Statement) extends Statement
+  case class DoWhile (contents: Statement, condition: Expression) extends Statement
   case class Return (returnExpression: Option[Expression]) extends Statement
   
   //C types
@@ -61,6 +63,11 @@ trait CAbstractSyntax {
   case object BinaryMinus extends BinaryOp
   case object BinaryTimes extends BinaryOp
   case object BinaryDivide extends BinaryOp
+  case object BinaryEquals extends BinaryOp
+  case object BinaryLessThan extends BinaryOp
+  case object BinaryLessThanOrEquals extends BinaryOp
+  case object BinaryGreaterThan extends BinaryOp
+  case object BinaryGreaterThanOrEquals extends BinaryOp
   
   //C Expressions
   sealed abstract class Expression
