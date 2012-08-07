@@ -31,6 +31,7 @@ trait CCompileAndRun extends CompilerAndRunInterface with CGenerator {
     val fileName = "cProgram"
     commandRunner.writeToFile(fileName, program)
     
+    //Compile and run
     val (_, stderr, exitCode) = commandRunner.run("gcc " + fileName + ".c -o " + fileName + ".o")
     val (stdout, stderr1, exitCode1) = commandRunner.run("./" + fileName + ".o")
     stdout.mkString("\n")

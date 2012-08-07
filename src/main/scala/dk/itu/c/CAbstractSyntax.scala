@@ -15,6 +15,11 @@ trait CAbstractSyntax {
   sealed abstract class TopDec
   case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends TopDec
   case class VariableDec (variableType: Type, identifier: String) extends TopDec
+  case class PrecompileInstr (instruction: PrecompileInstruction) extends TopDec
+  
+  sealed abstract class PrecompileInstruction
+  case class IncludeLoc (fileName: String) extends PrecompileInstruction
+  case class IncludeStd (fileName: String) extends PrecompileInstruction
   
   //Declarations inside a block
   sealed abstract class StmtOrDec

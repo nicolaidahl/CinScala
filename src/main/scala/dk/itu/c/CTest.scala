@@ -106,7 +106,7 @@ object Test extends CCompileAndRun with App {
     val mainStatements = List(Stmt(switchCase))
     val mainFunc = generateMainFunction(mainStatements)
     
-    Program(List(mainFunc))
+    Program(List(PrecompileInstr(IncludeStd("stdio.h")), mainFunc))
 
   }
   //println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
