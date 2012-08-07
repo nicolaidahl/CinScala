@@ -5,7 +5,7 @@ object Test extends CCompileAndRun with App {
   
   
   def generateMainFunction(stmtOrDecs: List[StmtOrDec]): FunctionDec =
-    FunctionDec(Some(TypeInteger), "main", List((TypeInteger, "argc"), (TypePointer(TypePointer(TypeChar)), "args")), stmtOrDecs)
+    CFunctionDec(Some(TypeInteger), "main", List((TypeInteger, "argc"), (TypePointer(TypePointer(TypeChar)), "args")), stmtOrDecs)
   
   //Tests the main function generation with if and return statements
   def mainFunctionTest: Program = {
@@ -69,7 +69,7 @@ object Test extends CCompileAndRun with App {
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar1", ConstantInteger(3))
     
     val statements = List(Dec(locVar), Stmt(ExpressionStatement(assign)), Dec(locVar2))
-    val testFun = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), statements)
+    val testFun = CFunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), statements)
     
     val funcCall = Call("testFunction", List(ConstantInteger(2)))
     val mainStatements = List(Stmt(ExpressionStatement(funcCall)))
@@ -83,8 +83,8 @@ object Test extends CCompileAndRun with App {
   //Testing redefinition of function
   def redefinitionOfFunction: Program = {
     
-    val testFun = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
-    val testFun2 = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
+    val testFun = CFunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
+    val testFun2 = CFunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), List())
     
     val funcCall = Call("testFunction", List(ConstantInteger(2)))
     val mainStatements = List(Stmt(ExpressionStatement(funcCall)))
