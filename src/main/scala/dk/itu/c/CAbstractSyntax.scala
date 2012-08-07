@@ -3,26 +3,25 @@ package dk.itu.c
 trait CAbstractSyntax {
   
   //Variable environment: Map from identifier to variable type
-  type VarEnv = Map[String, Type] 
+  type VarEnv = Map[String, TypeSpecifier] 
   //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = Map[String, (Option[Type], ArgList)]
+  type FunEnv = Map[String, (Option[TypeSpecifier], ArgList)]
   //Argument list
-  type ArgList = List[(Type, String)] 
+  type ArgList = List[(TypeSpecifier, String)] 
   
   case class Program (contents: List[ExternalDeclaration])
   
   //Top level declaration
   abstract class ExternalDeclaration
   trait FunctionDec extends ExternalDeclaration {
-    val returnType: Option[Type]
+    val returnType: Option[TypeSpecifier]
     val identifier: String
     val parameters: ArgList
     val stmtOrDecs: List[StmtOrDec]
    }
-  case class CFunctionDec(returnType: Option[Type], identifier: String,
+  case class CFunctionDec(returnType: Option[TypeSpecifier], identifier: String,
     parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  //case class Declaration() extends ExternalDeclaration
-  case class VariableDec (variableType: Type, identifier: String) extends ExternalDeclaration
+  case class VariableDec (variableType: TypeSpecifier, identifier: String) extends ExternalDeclaration
   case class StructDec (declarationList: List[Declaration], identifier: String) extends ExternalDeclaration
   case class PrecompileInstr (instruction: PrecompileInstruction) extends ExternalDeclaration
   
@@ -38,11 +37,22 @@ trait CAbstractSyntax {
   
   //Declarations
   sealed abstract class Declaration
-  case class LocalVariable (variableType: Type, identifier: String) extends Declaration //int x;
-  case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends Declaration //int x = e;
+  case class LocalVariable (variableType: TypeSpecifier, identifier: String) extends Declaration //int x;
+  case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;
   
   //Declaration specifier
   sealed abstract class DeclarationSpecifier
+  case class DecSpec(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  
+  //Storage class
+  sealed abstract class StorageClassSpecifier
+  case object Auto extends StorageClassSpecifier
+  case object Register extends StorageClassSpecifier
+  case object Static extends StorageClassSpecifier
+  case object Extern extends StorageClassSpecifier
+  case object Typedef extends StorageClassSpecifier
+  
+
   
   
   
@@ -59,11 +69,19 @@ trait CAbstractSyntax {
   case class Return (returnExpression: Option[Expression]) extends Statement
   
   //C types
-  sealed abstract class Type
-  case object TypeInteger extends Type
-  case object TypeChar extends Type
-  case class TypeArray (arrayType: Type, length: Option[Integer]) extends Type
-  case class TypePointer (pointerType: Type) extends Type
+  sealed abstract class TypeSpecifier
+  case object TypeVoid extends TypeSpecifier
+  case object TypeChar extends TypeSpecifier
+  case object TypeShort extends TypeSpecifier
+  case object TypeInteger extends TypeSpecifier
+  case object TypeLong extends TypeSpecifier
+  case object TypeFloat extends TypeSpecifier
+  case object TypeDouble extends TypeSpecifier
+  case object TypeSigned extends TypeSpecifier
+  case object TypeUnsigned extends TypeSpecifier
+  
+  /*case class TypeArray (arrayType: Type, length: Option[Integer]) extends TypeSpecifier
+  case class TypePointer (pointerType: Type) extends TypeSpecifier*/
   
   //C Unary operators
   sealed abstract class UnaryOp
@@ -94,7 +112,7 @@ trait CAbstractSyntax {
   case class SeqOr (expr1: Expression, expr2: Expression) extends Expression //Sequential or ||
   case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
   case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
-  case class Cast(expression: Expression, newType: Type) extends Expression //(int) a;
+  case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
 
   //C variable access
   sealed abstract class Access
