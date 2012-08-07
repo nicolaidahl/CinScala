@@ -45,30 +45,12 @@ trait CGenerator extends CAbstractSyntax {
   def lookupFunc(funEnv: FunEnv, identifier: String): Boolean =
     funEnv.exists(_._1.equals(identifier))
   
+    
   //Main generate function
   def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
-    def loop (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) =
-      topDecs match {
-        case Nil => (varEnv, funEnv, "")
-        case head :: tail =>
-          head match {
-            case variable: VariableDec =>
-              val (varEnv1, str) = generateVariableDec(varEnv, funEnv, variable)
-              val (varEnv2, funEnv1, str1) = loop(varEnv1, funEnv)(tail)
-              (varEnv2, funEnv1, str + str1)
-            case function: FunctionDec => 
-              val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
-              val (varEnv1, funEnv2, str1) = loop(varEnv, funEnv1)(tail)
-              (varEnv1, funEnv2, str + str1)
-            case PrecompileInstr(precompInstr) =>
-              val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
-              val (varEnv1, funEnv1, str1) = loop(varEnv, funEnv)(tail)
-              (varEnv1, funEnv1, result + str1)
-          }
-        
-      }
     
-    loop(varEnv, funEnv)(prog.contents)._3
+    
+    generateTopDecs(varEnv, funEnv)(prog.contents)._3
   }
   
   def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
@@ -77,6 +59,27 @@ trait CGenerator extends CAbstractSyntax {
       case IncludeStd(s) => "#include <" + s + ">"
     }
   }
+  
+  def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) =
+	topDecs match {
+	  case Nil => (varEnv, funEnv, "")
+	  case head :: tail =>
+	    head match {
+	      case variable: VariableDec =>
+	        val (varEnv1, str) = generateVariableDec(varEnv, funEnv, variable)
+	        val (varEnv2, funEnv1, str1) = generateTopDecs(varEnv1, funEnv)(tail)
+	        (varEnv2, funEnv1, str + str1)
+	      case function: FunctionDec => 
+	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
+	        val (varEnv1, funEnv2, str1) = generateTopDecs(varEnv, funEnv1)(tail)
+	        (varEnv1, funEnv2, str + str1)
+	      case PrecompileInstr(precompInstr) =>
+	        val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
+	        val (varEnv1, funEnv1, str1) = generateTopDecs(varEnv, funEnv)(tail)
+	        (varEnv1, funEnv1, result + str1)
+	    }
+	    
+	}
   
   /**
    * Generate a function declaration
