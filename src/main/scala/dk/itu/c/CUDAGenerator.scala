@@ -13,9 +13,9 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
       case Nil => (varEnv, funEnv, "")
       case head :: tail =>
         head match {
-          case function: CUDAFunctionDec => 
-            val functionTypeStr = generateCUDAFunctionType(function.functionType)
-            val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function.funDec)
+          case CUDAFunctionDec(functionType, returnType, ident, params, stmtOrDecs) => 
+            val functionTypeStr = generateCUDAFunctionType(functionType)
+            val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, CFunctionDec(returnType, ident, params, stmtOrDecs))
             val (varEnv1, funEnv2, str1) = generateTopDecs(varEnv, funEnv1)(tail)
             
             (varEnv1, funEnv2, functionTypeStr + " " + str + str1)

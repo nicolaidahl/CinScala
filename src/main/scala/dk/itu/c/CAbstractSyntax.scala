@@ -13,7 +13,14 @@ trait CAbstractSyntax {
   
   //Top level declaration
   abstract class TopDec
-  case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends TopDec
+  trait FunctionDec extends TopDec {
+    val returnType: Option[Type]
+    val identifier: String
+    val parameters: ArgList
+    val stmtOrDecs: List[StmtOrDec]
+   }
+  case class CFunctionDec(returnType: Option[Type], identifier: String,
+    parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
   case class VariableDec (variableType: Type, identifier: String) extends TopDec
   case class PrecompileInstr (instruction: PrecompileInstruction) extends TopDec
   
