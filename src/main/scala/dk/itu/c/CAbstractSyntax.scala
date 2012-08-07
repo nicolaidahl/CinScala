@@ -48,6 +48,11 @@ trait CAbstractSyntax {
   case object Extern extends StorageClassSpecifier
   case object Typedef extends StorageClassSpecifier
   
+  //Type qualifier
+  sealed abstract class TypeQualifier
+  case object Const extends TypeQualifier
+  case object Volatile extends TypeQualifier
+  
   //C statements
   sealed abstract class Statement
   case class Block (contents: List[StmtOrDec]) extends Statement
