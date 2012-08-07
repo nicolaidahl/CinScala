@@ -188,7 +188,9 @@ trait CGenerator extends CAbstractSyntax {
       case For (initialization, condition, counter, contents) =>
         "for(" + generateExpr(varEnv, funEnv)(initialization) + ";" + generateExpr(varEnv, funEnv)(condition) + ";" + generateExpr(varEnv, funEnv)(counter) + ")" + 
         generateStatement(varEnv, funEnv)(contents)
-        
+      case DoWhile (contents, condition) =>
+        "do " + generateStatement(varEnv, funEnv)(contents) + "\n" +
+        "while(" + generateExpr(varEnv, funEnv)(condition) + ");"
       case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
     }
     
