@@ -21,14 +21,8 @@ trait CAbstractSyntax {
    }
   case class CFunctionDec(returnType: Option[TypeSpecifier], identifier: String,
     parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  case class VariableDec (variableType: TypeSpecifier, identifier: String) extends ExternalDeclaration
-  case class StructDec (declarationList: List[Declaration], identifier: String) extends ExternalDeclaration
-  case class PrecompileInstr (instruction: PrecompileInstruction) extends ExternalDeclaration
+  case class Declaration (decSpecs: DeclarationSpecifiers, declarators: List[DirectDeclarator]) extends ExternalDeclaration
   
-  
-  sealed abstract class PrecompileInstruction
-  case class IncludeLoc (fileName: String) extends PrecompileInstruction
-  case class IncludeStd (fileName: String) extends PrecompileInstruction
   
   //Statements or declarations
   sealed abstract class StmtOrDec
@@ -36,13 +30,27 @@ trait CAbstractSyntax {
   case class Dec (declaration: Declaration) extends StmtOrDec
   
   //Declarations
-  sealed abstract class Declaration
+  /*sealed abstract class Declaration
   case class LocalVariable (variableType: TypeSpecifier, identifier: String) extends Declaration //int x;
-  case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;
+  case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;*/
   
   //Declaration specifier
-  sealed abstract class DeclarationSpecifier
-  case class DecSpec(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  sealed abstract class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  
+  
+  
+  sealed abstract class InitDeclarator
+  case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
+  case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
+  
+  sealed abstract class Declarator
+  case class DeclaratorWithPointer(pointer: Option[PointerTest], directDec: Declarator)
+  case class DirectDeclaratorWrapper(directDeclarator: DirectDeclarator)
+  
+  sealed abstract class DirectDeclarator
+  
+  sealed abstract class PointerTest
+  
   
   //Storage class
   sealed abstract class StorageClassSpecifier
@@ -51,11 +59,11 @@ trait CAbstractSyntax {
   case object Static extends StorageClassSpecifier
   case object Extern extends StorageClassSpecifier
   case object Typedef extends StorageClassSpecifier
-  
 
-  
-  
-  
+  //Type qualifier
+  sealed abstract class TypeQualifier
+  case object Const extends TypeQualifier
+  case object Volatile extends TypeQualifier
   
   //C statements
   sealed abstract class Statement
