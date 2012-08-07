@@ -29,11 +29,6 @@ trait CAbstractSyntax {
   case class Stmt (statement: Statement) extends StmtOrDec
   case class Dec (declaration: Declaration) extends StmtOrDec
   
-  //Declarations
-  /*sealed abstract class Declaration
-  case class LocalVariable (variableType: TypeSpecifier, identifier: String) extends Declaration //int x;
-  case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;*/
-  
   //Declaration specifier
   sealed abstract class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
   
@@ -41,16 +36,18 @@ trait CAbstractSyntax {
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
   case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
   
-  case class Declarator(pointer: Option[PointerTest], directDeclarator: DirectDeclarator)
+  case class Declarator(pointer: Option[Pointer], directDeclarator: DirectDeclarator)
   
   sealed abstract class DirectDeclarator
   case class Identifier(name: String) extends DirectDeclarator
   case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
   case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
   case class ParameterList(directDeclarator: DirectDeclarator, ptlt: ParameterTypeListTest) //direct-declarator ( parameter-type-list ) 
-  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list opt )
+  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list_opt )
   
-  sealed abstract class PointerTest
+  case class Pointer(typeQualifier: Option[TypeQualifier], pointer: Option[Pointer]) //*type-qualifier-list_opt pointer_opt
+  
+  
   sealed abstract class ParameterTypeListTest
   
   
@@ -89,6 +86,17 @@ trait CAbstractSyntax {
   case object TypeDouble extends TypeSpecifier
   case object TypeSigned extends TypeSpecifier
   case object TypeUnsigned extends TypeSpecifier
+  case class  TypeStruct(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends TypeSpecifier
+  case class  TypeStructShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends TypeSpecifier
+  case class  TypeUnion(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends TypeSpecifier
+  case class  TypeUnionShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends TypeSpecifier
+  case class  TypeEnum(ident: Option[String], enumerations: List[EnumerationDec]) extends TypeSpecifier
+  case class  TypeEnumShort(ident: String, enumerations: Option[List[EnumerationDec]]) extends TypeSpecifier
+  
+  
+  case class StructUnionDeclaration(typeQualifier: TypeQualifier, typeSpecifier: TypeSpecifier, declarator: List[Declarator]) //const int foo = 2, bar;
+  
+  case class EnumerationDec(ident: String, assignment: Option[Expression]) //enum ident { foo = 2, bar = 4 };
   
   /*case class TypeArray (arrayType: Type, length: Option[Integer]) extends TypeSpecifier
   case class TypePointer (pointerType: Type) extends TypeSpecifier*/
