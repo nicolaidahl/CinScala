@@ -9,11 +9,11 @@ trait CAbstractSyntax {
   //Argument list
   type ArgList = List[(Type, String)] 
   
-  case class Program (contents: List[TopDec])
+  case class Program (contents: List[ExternalDeclaration])
   
   //Top level declaration
-  abstract class TopDec
-  trait FunctionDec extends TopDec {
+  abstract class ExternalDeclaration
+  trait FunctionDec extends ExternalDeclaration {
     val returnType: Option[Type]
     val identifier: String
     val parameters: ArgList
@@ -21,9 +21,10 @@ trait CAbstractSyntax {
    }
   case class CFunctionDec(returnType: Option[Type], identifier: String,
     parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  case class VariableDec (variableType: Type, identifier: String) extends TopDec
-  case class StructDec (declarationList: List[Declaration], identifier: String) extends TopDec
-  case class PrecompileInstr (instruction: PrecompileInstruction) extends TopDec
+  //case class Declaration() extends ExternalDeclaration
+  case class VariableDec (variableType: Type, identifier: String) extends ExternalDeclaration
+  case class StructDec (declarationList: List[Declaration], identifier: String) extends ExternalDeclaration
+  case class PrecompileInstr (instruction: PrecompileInstruction) extends ExternalDeclaration
   
   
   sealed abstract class PrecompileInstruction
@@ -39,6 +40,12 @@ trait CAbstractSyntax {
   sealed abstract class Declaration
   case class LocalVariable (variableType: Type, identifier: String) extends Declaration //int x;
   case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends Declaration //int x = e;
+  
+  //Declaration specifier
+  sealed abstract class DeclarationSpecifier
+  
+  
+  
   
   //C statements
   sealed abstract class Statement

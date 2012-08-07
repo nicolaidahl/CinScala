@@ -60,7 +60,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) =
+  def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) =
 	topDecs match {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>

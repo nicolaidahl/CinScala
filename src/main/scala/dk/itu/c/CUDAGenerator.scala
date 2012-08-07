@@ -8,7 +8,7 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
     generateTopDecs(varEnv, funEnv)(prog.contents)._3
   }
   
-  override def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[TopDec]): (VarEnv, FunEnv, String) = {
+  /*override def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) = {
     topDecs match {
       case Nil => (varEnv, funEnv, "")
       case head :: tail =>
@@ -24,7 +24,7 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
         }
       
     }
-  }
+  }*/
   
   def generateCUDAFunctionType(funcType: CUDAFunctionType): String =
     funcType match {
