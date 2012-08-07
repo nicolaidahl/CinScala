@@ -14,23 +14,21 @@ trait CAbstractSyntax {
   //Top level declaration
   abstract class ExternalDeclaration
   trait FunctionDec extends ExternalDeclaration {
-    val returnType: Option[TypeSpecifier]
-    val identifier: String
-    val parameters: ArgList
-    val stmtOrDecs: List[StmtOrDec]
+    val declarationSpecifiers: Option[DeclarationSpecifiers]
+    val declarator: Declarator
+    val parameters: Option[List[Declaration]]
+    val compoundStmt: CompoundStatement
    }
-  case class CFunctionDec(returnType: Option[TypeSpecifier], identifier: String,
-    parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  case class Declaration (decSpecs: DeclarationSpecifiers, declarators: List[DirectDeclarator]) extends ExternalDeclaration
+  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator,
+    parameters: Option[List[Declaration]], compoundStmt: CompoundStatement) extends FunctionDec
+  case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
-  
-  //Statements or declarations
-  sealed abstract class StmtOrDec
-  case class Stmt (statement: Statement) extends StmtOrDec
-  case class Dec (declaration: Declaration) extends StmtOrDec
   
   //Declaration specifier
-  sealed abstract class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  
+  //Any declaration
+  case class Declaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator])
   
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
@@ -65,7 +63,7 @@ trait CAbstractSyntax {
   case object Volatile extends TypeQualifier
   
   //C statements
-  sealed abstract class Statement
+  /*sealed abstract class Statement
   case class Block (contents: List[StmtOrDec]) extends Statement
   case class ExpressionStatement (expr: Expression) extends Statement
   case class If (condition: Expression, ifBranch: List[StmtOrDec], elseIfBranches: Option[List[(Expression, List[StmtOrDec])]], elseBranch: Option[List[StmtOrDec]]) extends Statement
@@ -73,7 +71,16 @@ trait CAbstractSyntax {
   case class While (condition: Expression, contents: Statement) extends Statement
   case class For (initialization: Expression, condition: Expression, counter: Expression, contents: Statement) extends Statement
   case class DoWhile (contents: Statement, condition: Expression) extends Statement
-  case class Return (returnExpression: Option[Expression]) extends Statement
+  case class Return (returnExpression: Option[Expression]) extends Statement*/
+  
+  sealed abstract class Statement
+  case class LabeledStatement
+  case class ExpressionStatement
+  case class CompoundStatement
+  case class SelectionStatement
+  case class IterationStatement
+  case class JumpStatement
+
   
   //C types
   sealed abstract class TypeSpecifier
