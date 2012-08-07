@@ -111,7 +111,7 @@ object Test extends CCompileAndRun with App {
   }
   //println(generate(switchTest, getEmptyVarEnv, getEmptyFunEnv))
   
-  println(compileAndRun(switchTest))
+  println(compile(switchTest))
   
   
   
