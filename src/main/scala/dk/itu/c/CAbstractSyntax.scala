@@ -21,7 +21,7 @@ trait CAbstractSyntax {
    }
   case class CFunctionDec(returnType: Option[TypeSpecifier], identifier: String,
     parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  case class Declaration (decSpecs: DeclarationSpecifiers, declarators: List[DirectDeclarator]) extends ExternalDeclaration
+  case class Declaration (decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
   
   //Statements or declarations
@@ -35,7 +35,7 @@ trait CAbstractSyntax {
   case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;*/
   
   //Declaration specifier
-  sealed abstract class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
   
   
   

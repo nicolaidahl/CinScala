@@ -1,6 +1,6 @@
 package dk.itu.c
 
-
+/*
 object Test extends CCompileAndRun with App {
   
   
@@ -149,7 +149,7 @@ object Test extends CCompileAndRun with App {
   }
   println(compile(doWhileTest))
 }
-
+*/
 
 
 

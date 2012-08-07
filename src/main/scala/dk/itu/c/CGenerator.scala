@@ -53,19 +53,19 @@ trait CGenerator extends CAbstractSyntax {
     generateTopDecs(varEnv, funEnv)(prog.contents)._3
   }
   
-  def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
+  /*def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
       case IncludeLoc(s) => "#include \"" + s + "\" \n"
       case IncludeStd(s) => "#include <" + s + "> \n"
     }
-  }
+  }*/
   
   def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) =
 	topDecs match {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
-	      case variable: VariableDec =>
+	      case variable: Declaration =>
 	        val (varEnv1, str) = generateVariableDec(varEnv, funEnv, variable)
 	        val (varEnv2, funEnv1, str1) = generateTopDecs(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
@@ -73,10 +73,10 @@ trait CGenerator extends CAbstractSyntax {
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
 	        val (varEnv1, funEnv2, str1) = generateTopDecs(varEnv, funEnv1)(tail)
 	        (varEnv1, funEnv2, str + str1)
-	      case PrecompileInstr(precompInstr) =>
+	      /*case PrecompileInstr(precompInstr) =>
 	        val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
 	        val (varEnv1, funEnv1, str1) = generateTopDecs(varEnv, funEnv)(tail)
-	        (varEnv1, funEnv1, result + str1)
+	        (varEnv1, funEnv1, result + str1)*/
 	    }
 	    
 	}
@@ -113,11 +113,65 @@ trait CGenerator extends CAbstractSyntax {
   /**
    * Generate a variable declaration
    */
-  def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: VariableDec): (VarEnv, String) = {
+  /*def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: Declaration): (VarEnv, String) = {
     val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
     (varEnv1, generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier) 
+  }*/
+  
+  def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv, dec: Declaration): (VarEnv, String) = {
+    var varEnv1 
+    val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
+    
+    (varEnv1, decSpecs)
   }
   
+  def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers) = {
+    val storageSpecifier = decSpecs.storage match {
+      case Some(s) => generateStorageSpecifier(s) + " "
+      case None => ""
+    }
+    val typeSpecifier = decSpecs.typeSpec match {
+      case Some(t) => generateTypeSpecifier(t) + " "
+      case None => ""
+    }
+    val typeQualifier = decSpecs.qualifier match {
+      case Some(q) => generateTypeQualifier(q) + " "
+      case None => ""
+    }
+    
+    storageSpecifier + typeSpecifier + typeQualifier
+  }
+  
+  def generateStorageSpecifier(storageSpecs: StorageClassSpecifier) = {
+    storageSpecs match {
+      case Auto => "auto"
+      case Register => "register"
+      case Static => "static"
+      case Extern => "extern"
+      case Typedef => "typedef"
+    }
+  }
+  
+  def generateTypeSpecifier(typeSpec: TypeSpecifier) = {
+    typeSpec match {
+      case TypeVoid => "void"
+      case TypeChar => "char"
+      case TypeShort => "short"
+      case TypeInteger => "int"
+      case TypeLong => "long"
+      case TypeFloat => "float"
+      case TypeDouble => "double"
+      case TypeSigned => "signed"
+      case TypeUnsigned => "unsigned"
+    }
+  }
+  
+  def generateTypeQualifier(typeQual: TypeQualifier) = {
+    typeQual match {
+      case Const => "const"
+      case Volatile => "volatile"
+    }
+  }
   
   def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (String, VarEnv) = {
       stmtsordecs match {
@@ -135,7 +189,7 @@ trait CGenerator extends CAbstractSyntax {
       case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
     }
   
-  def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
+  /*def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
     dec match {
     case LocalVariable(varType, identifier) => 
       if(lookupVar(varEnv, identifier))
@@ -153,7 +207,7 @@ trait CGenerator extends CAbstractSyntax {
         val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
         (retString, varEnv1)
       }
-    }
+    }*/
     
   def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
     stmt match {
