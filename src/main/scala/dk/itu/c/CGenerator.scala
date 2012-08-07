@@ -60,10 +60,21 @@ trait CGenerator extends CAbstractSyntax {
               val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
               val (varEnv1, funEnv2, str1) = loop(varEnv, funEnv1)(tail)
               (varEnv1, funEnv2, str + str1)
+            case PrecompileInstr(precompInstr) =>
+              val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
+              (varEnv, funEnv, result)
           }
+        
       }
     
     loop(varEnv, funEnv)(prog.contents)._3
+  }
+  
+  def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
+    instr match {
+      case IncludeLoc(s) => "#include \"" + s + "\""
+      case IncludeStd(s) => "#include <" + s + ">"
+    }
   }
   
   /**
