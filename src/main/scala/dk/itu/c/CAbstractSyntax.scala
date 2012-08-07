@@ -54,6 +54,11 @@ trait CAbstractSyntax {
   case object BinaryMinus extends BinaryOp
   case object BinaryTimes extends BinaryOp
   case object BinaryDivide extends BinaryOp
+  case object BinaryEquals extends BinaryOp
+  case object BinaryLessThan extends BinaryOp
+  case object BinaryLessThanOrEquals extends BinaryOp
+  case object BinaryGreaterThan extends BinaryOp
+  case object BinaryGreaterThanOrEquals extends BinaryOp
   
   //C Expressions
   sealed abstract class Expression

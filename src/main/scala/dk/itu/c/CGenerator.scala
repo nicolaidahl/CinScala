@@ -208,6 +208,11 @@ trait CGenerator extends CAbstractSyntax {
       case BinaryMinus => "-"
       case BinaryTimes => "*"
       case BinaryDivide => "/"
+      case BinaryEquals => "="
+      case BinaryLessThan => "<"
+      case BinaryLessThanOrEquals => "<="
+      case BinaryGreaterThan => ">"
+      case inaryGreaterThanOrEquals => ">="
     }
     
     
