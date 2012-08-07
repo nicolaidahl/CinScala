@@ -62,7 +62,8 @@ trait CGenerator extends CAbstractSyntax {
               (varEnv1, funEnv2, str + str1)
             case PrecompileInstr(precompInstr) =>
               val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
-              (varEnv, funEnv, result)
+              val (varEnv1, funEnv1, str1) = loop(varEnv, funEnv)(tail)
+              (varEnv1, funEnv1, result + str1)
           }
         
       }
