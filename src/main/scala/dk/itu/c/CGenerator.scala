@@ -30,8 +30,8 @@ import scala.dbc.syntax.StatementExpression
 
 trait CGenerator extends CAbstractSyntax {
   
-  def getEmptyVarEnv: Map[String, Type] = Map.empty[String, Type]
-  def getEmptyFunEnv: Map[String, (Option[Type], ArgList)] = Map.empty[String, (Option[Type], ArgList)]
+  def getEmptyVarEnv: Map[String, TypeSpecifier] = Map.empty[String, TypeSpecifier]
+  def getEmptyFunEnv: Map[String, (Option[TypeSpecifier], ArgList)] = Map.empty[String, (Option[TypeSpecifier], ArgList)]
   
   case class CASTException(smth:String) extends Exception(smth)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
@@ -202,13 +202,13 @@ trait CGenerator extends CAbstractSyntax {
       case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
     }
     
-  def generateType(t: Type, varEnv: VarEnv, funEnv: FunEnv) : String = 
+  def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv) : String = 
     t match {
       case TypeInteger => "int"
       case TypeChar => "char"
-      case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
+      /*case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
       case TypeArray(t, None) => generateType(t, varEnv, funEnv) + "[]"
-      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"
+      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"*/
     }
   
   def generateUnaryOp(ope: UnaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
