@@ -15,17 +15,23 @@ trait CAbstractSyntax {
   sealed abstract class TopDec
   case class FunctionDec (returnType: Option[Type], identifier: String, parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends TopDec
   case class VariableDec (variableType: Type, identifier: String) extends TopDec
+  case class StructDec (declarationList: List[Declaration], identifier: String) extends TopDec
   case class PrecompileInstr (instruction: PrecompileInstruction) extends TopDec
+  
   
   sealed abstract class PrecompileInstruction
   case class IncludeLoc (fileName: String) extends PrecompileInstruction
   case class IncludeStd (fileName: String) extends PrecompileInstruction
   
-  //Declarations inside a block
+  //Statements or declarations
   sealed abstract class StmtOrDec
   case class Stmt (statement: Statement) extends StmtOrDec
-  case class LocalVariable (variableType: Type, identifier: String) extends StmtOrDec //int x;
-  case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends StmtOrDec //int x = e;
+  case class Dec (declaration: Declaration) extends StmtOrDec
+  
+  //Declarations
+  sealed abstract class Declaration
+  case class LocalVariable (variableType: Type, identifier: String) extends Declaration //int x;
+  case class LocalVariableWithAssign (variableType: Type, identifier: String, expr: Expression) extends Declaration //int x = e;
   
   //C statements
   sealed abstract class Statement

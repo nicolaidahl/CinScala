@@ -129,22 +129,27 @@ trait CGenerator extends CAbstractSyntax {
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (String, VarEnv) =
     sord match {
       case Stmt(statement) => (generateStatement(varEnv, funEnv)(statement), varEnv)
-      case LocalVariable(varType, identifier) => 
-        if(lookupVar(varEnv, identifier))
-          throw new VariableRedefinitionException("Variable " + identifier + " has already been defined")
-        else {
-          val varEnv1 = varEnv + (identifier -> varType)
-          val retString = generateType(varType, varEnv1, funEnv) + " " + identifier + ";"
-          (retString, varEnv1)
-        }
-      case LocalVariableWithAssign(varType, ident, expr) =>
-        if(lookupVar(varEnv, ident))
-          throw new VariableRedefinitionException("Variable " + ident + " has already been defined")
-        else {
-          val varEnv1 = varEnv + (ident -> varType)
-          val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
-          (retString, varEnv1)
-        }
+      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
+    }
+  
+  def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
+    dec match {
+    case LocalVariable(varType, identifier) => 
+      if(lookupVar(varEnv, identifier))
+        throw new VariableRedefinitionException("Variable " + identifier + " has already been defined")
+      else {
+        val varEnv1 = varEnv + (identifier -> varType)
+        val retString = generateType(varType, varEnv1, funEnv) + " " + identifier + ";"
+        (retString, varEnv1)
+      }
+    case LocalVariableWithAssign(varType, ident, expr) =>
+      if(lookupVar(varEnv, ident))
+        throw new VariableRedefinitionException("Variable " + ident + " has already been defined")
+      else {
+        val varEnv1 = varEnv + (ident -> varType)
+        val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
+        (retString, varEnv1)
+      }
     }
     
   def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =

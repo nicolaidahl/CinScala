@@ -12,7 +12,7 @@ object Test extends CCompileAndRun with App {
 	val locVarAss = new LocalVariableWithAssign(TypeInteger, "testVar", ConstantInteger(2))
 	val ifstmt = If(AccessExpr(AccessVariable("testVar")), List(Stmt(Return(Some(ConstantInteger(2))))), None, Some(List(Stmt(Return(Some(ConstantInteger(5)))))))
     
-    val statements = List(locVarAss, Stmt(ifstmt))
+    val statements = List(Dec(locVarAss), Stmt(ifstmt))
     val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
@@ -25,7 +25,7 @@ object Test extends CCompileAndRun with App {
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar2", ConstantInteger(3))
     
-    val statements = List(locVar, Stmt(ExpressionStatement(assign)), locVar2)
+    val statements = List(Dec(locVar), Stmt(ExpressionStatement(assign)), Dec(locVar2))
     val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
@@ -36,7 +36,7 @@ object Test extends CCompileAndRun with App {
   //Testing variable scope for access to variable in unreachable scope
   def variableScope: Program = {
     val locVar = LocalVariable(TypeInteger, "testVar")
-    val block = Block(List(locVar))
+    val block = Block(List(Dec(locVar)))
    
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
     
@@ -54,7 +54,7 @@ object Test extends CCompileAndRun with App {
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar", ConstantInteger(3))
     
-    val statements = List(locVar, Stmt(ExpressionStatement(assign)), locVar2)
+    val statements = List(Dec(locVar), Stmt(ExpressionStatement(assign)), Dec(locVar2))
     val mainFunc = generateMainFunction(statements)
     
     Program(List(mainFunc))
@@ -68,7 +68,7 @@ object Test extends CCompileAndRun with App {
     val assign = Assign(AccessVariable("testVar"), ConstantInteger(2))
     val locVar2 = LocalVariableWithAssign(TypeInteger, "testVar1", ConstantInteger(3))
     
-    val statements = List(locVar, Stmt(ExpressionStatement(assign)), locVar2)
+    val statements = List(Dec(locVar), Stmt(ExpressionStatement(assign)), Dec(locVar2))
     val testFun = FunctionDec(Some(TypeInteger), "testFunction", List((TypePointer(TypeInteger), "input")), statements)
     
     val funcCall = Call("testFunction", List(ConstantInteger(2)))
@@ -130,7 +130,7 @@ object Test extends CCompileAndRun with App {
     val iassign = LocalVariable(TypeInteger, "i")
     val forstmt = For(Assign(AccessVariable("i"), ConstantInteger(0)), BinaryPrim(BinaryLessThan, AccessExpr(AccessVariable("i")), ConstantInteger(5)), UnaryPrim(UnaryIncrement, AccessExpr(AccessVariable("i"))), Block(List(Stmt(Return(Some(ConstantInteger(0)))))))
   
-    val mainStatements = List(iassign, Stmt(forstmt))
+    val mainStatements = List(Dec(iassign), Stmt(forstmt))
     val mainFunc = generateMainFunction(mainStatements)
     
     Program(List(PrecompileInstr(IncludeStd("stdio.h")), mainFunc))
@@ -142,7 +142,7 @@ object Test extends CCompileAndRun with App {
     val iassign = LocalVariable(TypeInteger, "i")
     val doWhilestmt = DoWhile(ExpressionStatement(UnaryPrim(UnaryDecrement, AccessExpr(AccessVariable("i")))), BinaryPrim(BinaryGreaterThan, AccessExpr(AccessVariable("i")), ConstantInteger(0)))
   
-    val mainStatements = List(iassign, Stmt(doWhilestmt))
+    val mainStatements = List(Dec(iassign), Stmt(doWhilestmt))
     val mainFunc = generateMainFunction(mainStatements)
     
     Program(List(PrecompileInstr(IncludeStd("stdio.h")), mainFunc))
