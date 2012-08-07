@@ -74,13 +74,17 @@ trait CAbstractSyntax {
   case class Return (returnExpression: Option[Expression]) extends Statement*/
   
   sealed abstract class Statement
-  case class LabeledStatement
-  case class ExpressionStatement
-  case class CompoundStatement
-  case class SelectionStatement
-  case class IterationStatement
-  case class JumpStatement
+  case class LabeledStatement extends Statement
+  case class ExpressionStatement(expr: Option[Expression]) extends Statement
+  case class CompoundStatement(stmtOrDecList: List[StmtOrDec]) extends Statement //{ declaration-list_opt statement-list_opt }
+  case class SelectionStatement extends Statement
+  case class IterationStatement extends Statement
+  case class JumpStatement extends Statement
 
+  //Statements or declarations
+  sealed abstract class StmtOrDec
+  case class Stmt (statement: Statement) extends StmtOrDec
+  case class Dec (declaration: Declaration) extends StmtOrDec
   
   //C types
   sealed abstract class TypeSpecifier
@@ -109,21 +113,27 @@ trait CAbstractSyntax {
   case class TypePointer (pointerType: Type) extends TypeSpecifier*/
   
   //C Unary operators
-  sealed abstract class UnaryOp
+  sealed abstract class UnaryOp //Missing: &*+-~!
   case object UnaryDecrement extends UnaryOp
   case object UnaryIncrement extends UnaryOp
-
+  
+  
+  
   //C Binary Operators
   sealed abstract class BinaryOp
   case object BinaryPlus extends BinaryOp
   case object BinaryMinus extends BinaryOp
   case object BinaryTimes extends BinaryOp
   case object BinaryDivide extends BinaryOp
+  case object BinaryModulo extends BinaryOp
   case object BinaryEquals extends BinaryOp
   case object BinaryLessThan extends BinaryOp
   case object BinaryLessThanOrEquals extends BinaryOp
   case object BinaryGreaterThan extends BinaryOp
   case object BinaryGreaterThanOrEquals extends BinaryOp
+  case object BinaryBitwiseOr extends BinaryOp
+  case object BinaryBitwiseAnd extends BinaryOp
+  case object BinaryBitwiseXOR extends BinaryOp
   
   //C Expressions
   sealed abstract class Expression
@@ -139,6 +149,21 @@ trait CAbstractSyntax {
   case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
   case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
 
+  
+  sealed abstract class AssignmentOperator
+  case object Equals // =
+  case object TimesEquals // *=
+  case object DivisionEquals // /=
+  case object ModuloEquals // %=
+  case object PlusEquals // +=
+  case object MinusEquals // -=
+  case object ShiftLeftEquals // <<=
+  case object ShiftRightEquals // >>=
+  case object BitwiseAndEquals // &=
+  case object BitwiseOrEquals // |=
+  case object BitwiseXOREquals // ^=
+    
+  
   //C variable access
   sealed abstract class Access
   case class AccessVariable (ident: String) extends Access //Variable access  ident
