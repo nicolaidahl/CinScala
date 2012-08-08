@@ -31,7 +31,7 @@ import scala.dbc.syntax.StatementExpression
 trait CGenerator extends CAbstractSyntax {
   
   def getEmptyVarEnv: Map[String, TypeSpecifier] = Map.empty[String, TypeSpecifier]
-  def getEmptyFunEnv: Map[String, (Option[TypeSpecifier], ArgList)] = Map.empty[String, (Option[TypeSpecifier], ArgList)]
+  def getEmptyFunEnv: Map[String, List[Declaration]] = Map.empty[String, List[Declaration]]
   
   case class CASTException(smth:String) extends Exception(smth)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
@@ -85,29 +85,27 @@ trait CGenerator extends CAbstractSyntax {
    * Generate a function declaration
    */
   def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: FunctionDec): (FunEnv, String) = {
-      
-    //Fail if already defined else add to environment  
-    if(lookupFunc(funEnv, functionDec.identifier))
-      throw new FunctionRedefinitionException("Redifinition of function " + functionDec.identifier)
+    val (ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
+    val returnType = functionDec.declarationSpecifiers match {
+      case Some(ds) => ds.typeSpec
+      case None => TypeInteger
+    }
+    val parameters = functionDec.declarationList match {
+      case Some(p) => p
+      case None => List()
+    }
     
-    val funEnv1 = funEnv + (functionDec.identifier -> (functionDec.returnType, functionDec.parameters))
+    val funEnv1 = funEnv + (ident -> parameters)
       
-    val ts = 
-      functionDec.returnType match {
-        case None => "void"
-        case Some(t) => generateType(t, varEnv, funEnv1)
-      }
-      
-    val returnType = ts
-    val funcName = functionDec.identifier
+    val returnTypeStr = generateType(returnType, varEnv, funEnv1)
 
-    val params = (functionDec.parameters.map({
-      case (typ, name) => generateType(typ, varEnv, funEnv1) + " " + name
+    val parametersStr = (parameters.map({
+      case d => generateDeclaration(varEnv, funEnv)(d)
     }).mkString("(", ", ", ")"))
     
-    val body = "{\n" + stmtOrDecLoop(varEnv, funEnv1)(functionDec.stmtOrDecs)._1 + "\n}"
+    val body = "{\n" + generateStatement(varEnv, funEnv1)(functionDec.compoundStmt) + "\n}"
 
-    (funEnv1, returnType + " " + funcName + params + body)
+    (funEnv1, returnType + " " + ident + parametersStr + body)
   }  
 
   /**
@@ -125,7 +123,7 @@ trait CGenerator extends CAbstractSyntax {
     
     for (id <- dec.declarators) {
       val (ident, str) = generateInitDeclarator(varEnv, funEnv)(id)
-      tenv + (ident -> dec.decSpecs.typeSpec)
+      tenv = tenv + (ident -> dec.decSpecs.typeSpec)
       s ::: List(str)
     }
     
@@ -250,7 +248,7 @@ trait CGenerator extends CAbstractSyntax {
       }
     }*/
     
-  def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
+  /*def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
     stmt match {
       case Block (contents) => 
         "{\n" + stmtOrDecLoop(varEnv, funEnv)(contents)._1 + "\n}"
@@ -295,9 +293,81 @@ trait CGenerator extends CAbstractSyntax {
         "do " + generateStatement(varEnv, funEnv)(contents) + "\n" +
         "while(" + generateExpr(varEnv, funEnv)(condition) + ");"
       case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
+    }*/
+  
+  def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String = {
+    stmt match {
+      case LabeledStmt(ls) => generateLabeledStmt(varEnv, funEnv)(ls)
+      case ExpressionStmt(expr) => expr match {
+          case Some(es) => generateExpr(varEnv, funEnv)(es) + ";"
+          case None => ";"
+        }
+      case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
+      case SelectionStmt(ss) => generateSelectionStmt(varEnv, funEnv)(ss)
+      case IterationStmt(is) => generateIterationStmt(varEnv, funEnv)(is)
+      case JumpStmt(js) => generateJumpStmt(varEnv, funEnv)(js)
     }
+  }
+  
+  def generateLabeledStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: LabeledStatement): String = {
+    stmt match {
+      case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
+      case CaseStmt(e, s) => "case " + generateExpr(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
+      case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
+    }
+  }
+  
+  def generateCompoundStmt(varEnv: VarEnv, funEnv: FunEnv)(stmts: List[StmtOrDec]): String = {
+    stmts match {
+      case Nil => ""
+      case head :: tail => {
+        val (varEnv1, str1) = generateStmtOrDec(varEnv, funEnv)(head)
+        val str2 = generateCompoundStmt(varEnv1, funEnv)(tail)
+        str1 + "\n" + str2
+      }
+    }
+  }
+  
+  def generateSelectionStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: SelectionStatement): String = {
+    stmt match {
+      case If(e, s) => "if(" + generateExpr(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case IfElse(e, s1, s2) => "if(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
+      case Switch(e, s) => "switch(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+    }
+  }
+  
+  def generateIterationStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: IterationStatement): String = {
+    stmt match {
+      case While(e, s) => "while(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case For(i, e, c, s) => {
+        val ss = List(i, e, c).map({
+          case expr => expr match {
+            case Some(e) => generateExpr(varEnv, funEnv)(e)
+            case None => ""
+          }
+        })
+        "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
+      }
+      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpr(varEnv, funEnv)(e) + ")\n"
+    }
+  }
+  
+  def generateJumpStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: JumpStatement): String = {
+    stmt match {
+      case Goto(i) => "goto " + i + ";"
+      case Continue => "continue;"
+      case Break => "break;"
+      case Return(e) => {
+        val es = e match {
+          case Some(expr) => generateExpr(varEnv, funEnv)(expr)
+          case None => ""
+        }
+        "return " + es
+      }
+    }
+  }
     
-  def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv) : String = 
+  def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv): String = 
     t match {
       case TypeInteger => "int"
       case TypeChar => "char"
