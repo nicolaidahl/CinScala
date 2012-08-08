@@ -457,6 +457,11 @@ trait CGenerator extends CAbstractSyntax {
       case CastExpr(castExpr) => generateCastExpression(varEnv, funEnv)(castExpr)
       case BinaryPrim(ope, expr1, expr2) =>
         generateExpression(varEnv, funEnv)(expr1) + " " + generateBinaryOp(ope) + " " + generateExpression(varEnv, funEnv)(expr2)
+      case ConstantInteger(contents) => contents.toString()
+      case ConstantChar (contents) => contents.toString()
+      case ConstantFloat (contents) => contents.toString()
+      case ConstantEnumeration => "" //TODO find out what this is
+      case CharArray (content) => content
     }
     
   def generateCastExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CastExpression): String =
