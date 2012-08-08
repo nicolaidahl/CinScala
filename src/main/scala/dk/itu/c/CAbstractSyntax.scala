@@ -43,13 +43,17 @@ trait CAbstractSyntax {
   case class Identifier(name: String) extends DirectDeclarator
   case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
   case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
-  case class ParameterList(directDeclarator: DirectDeclarator, ptlt: ParameterTypeListTest) //direct-declarator ( parameter-type-list ) 
-  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list_opt )
+  case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-declarator ( param1, param2, ... ) 
+  case class IdentifierList(directDeclarator: DirectDeclarator, identifierList: Option[List[String]])//direct-declarator ( identifier-list_opt )
   
-  case class Pointer(typeQualifier: Option[TypeQualifier], pointer: Option[Pointer]) //*type-qualifier-list_opt pointer_opt
+  case class Pointer(pointer: Option[Pointer], typeQualifier: Option[TypeQualifier]) //*type-qualifier-list_opt pointer_opt
   
+  sealed abstract class ParameterDeclaration
+  case class NormalDeclaration(decSpec: DeclarationSpecifiers, declarator: Declarator)
+  case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator])
   
-  sealed abstract class ParameterTypeListTest
+  sealed abstract class AbstractDeclarator
+  case class AbstractPointer(pointer: Pointer)
   
   
   //Storage class
