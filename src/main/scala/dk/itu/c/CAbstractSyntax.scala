@@ -50,8 +50,13 @@ trait CAbstractSyntax {
   case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator])
   
   sealed abstract class AbstractDeclarator
-  case class AbstractPointer(pointer: Pointer)
+  case class AbstractPointer(pointer: Pointer) extends AbstractDeclarator
+  case class NormalDirectAbstractDeclarator(pointer: Option[Pointer], directAbDec: DirectAbstractDeclarator) extends AbstractDeclarator //pointer_opt direct-abstract-declarator
   
+  sealed abstract class DirectAbstractDeclarator
+  case class ParenthesiseAbDec(abstractDeclarator: AbstractDeclarator) extends DirectAbstractDeclarator
+  case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: ConstantExpressionTest) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
+  case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage class
   sealed abstract class StorageClassSpecifier
@@ -76,7 +81,7 @@ trait CAbstractSyntax {
   case class JumpStmt(jumpStatement: JumpStatement) extends Statement
 
   sealed abstract class LabeledStatement
-  case class IdentColonStmt(ident: String, stmt: Statement) extends LabeledStatement //ident : stmt
+  case class LabelStmt(ident: String, stmt: Statement) extends LabeledStatement //ident : stmt
   case class CaseStmt(expr: ConstantExpressionTest, stmt: Statement) extends LabeledStatement // case expr : stmt
   case class DefaultCaseStmt(stmt: Statement) extends LabeledStatement // default : stmt
   
@@ -137,7 +142,7 @@ trait CAbstractSyntax {
   case object BinaryTimes extends BinaryOp
   case object BinaryDivide extends BinaryOp
   case object BinaryModulo extends BinaryOp
-  case object BinaryEquals extends BinaryOp
+  case object BinaryEquality extends BinaryOp
   case object BinaryLessThan extends BinaryOp
   case object BinaryLessThanOrEquals extends BinaryOp
   case object BinaryGreaterThan extends BinaryOp
@@ -145,8 +150,16 @@ trait CAbstractSyntax {
   case object BinaryBitwiseOr extends BinaryOp
   case object BinaryBitwiseAnd extends BinaryOp
   case object BinaryBitwiseXOR extends BinaryOp
+  case object BinaryLogicalAnd extends BinaryOp
+  case object BinaryLogicalOr extends BinaryOp
+  case object BinaryShiftRight extends BinaryOp
+  case object BinaryShiftLeft extends BinaryOp
   
   sealed abstract class ConstantExpressionTest
+  
+  //TypeName
+  case class TypeName(qualifierSpecifierList: TypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
+  case class TypeSpecifierQualifier(typeSpecifier: TypeSpecifier, typeQualifier: TypeQualifier)
   
   //C Expressions
   sealed abstract class Expression
@@ -156,8 +169,6 @@ trait CAbstractSyntax {
   case class ConstantInteger (contents: Integer) extends Expression
   case class UnaryPrim (operator: UnaryOp, expression: Expression) extends Expression //Unary primitive operator
   case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends Expression //Binary primitive operator
-  case class SeqAnd (expr1: Expression, expr2: Expression) extends Expression //Sequential and &&
-  case class SeqOr (expr1: Expression, expr2: Expression) extends Expression //Sequential or ||
   case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
   case class ConditionalExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
   case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
