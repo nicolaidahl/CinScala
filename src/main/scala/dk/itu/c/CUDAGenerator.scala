@@ -26,11 +26,11 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
     }
   }*/
   
-  def generateCUDAFunctionType(funcType: CUDAFunctionType): String =
+  /*def generateCUDAFunctionType(funcType: CUDAFunctionType): String =
     funcType match {
       case GlobalType() => "__global__"
       case DeviceType() => "__device__"
     }
-  
+  */
   
 }

@@ -17,12 +17,10 @@ trait CAbstractSyntax {
     val declarator: Declarator
     val declarationList: Option[List[Declaration]]
     val compoundStmt: CompoundStmt
-   }
-
+  }
   case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
   compoundStmt: CompoundStmt) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
-  
   
   //Declaration specifier
   case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: TypeSpecifier, qualifier: Option[TypeQualifier])
@@ -37,7 +35,7 @@ trait CAbstractSyntax {
   case class Declarator(pointer: Option[Pointer], directDeclarator: DirectDeclarator)
   
   sealed abstract class DirectDeclarator
-  case class Identifier(name: String) extends DirectDeclarator
+  case class DecIdentifier(name: String) extends DirectDeclarator
   case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
   case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
   case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-declarator ( param1, param2, ... ) 
@@ -55,7 +53,7 @@ trait CAbstractSyntax {
   
   sealed abstract class DirectAbstractDeclarator
   case class ParenthesiseAbDec(abstractDeclarator: AbstractDeclarator) extends DirectAbstractDeclarator
-  case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: ConstantExpressionTest) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
+  case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: ConstantExpression) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
   case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage class
@@ -82,7 +80,7 @@ trait CAbstractSyntax {
 
   sealed abstract class LabeledStatement
   case class LabelStmt(ident: String, stmt: Statement) extends LabeledStatement //ident : stmt
-  case class CaseStmt(expr: ConstantExpressionTest, stmt: Statement) extends LabeledStatement // case expr : stmt
+  case class CaseStmt(expr: ConstantExpression, stmt: Statement) extends LabeledStatement // case expr : stmt
   case class DefaultCaseStmt(stmt: Statement) extends LabeledStatement // default : stmt
   
   sealed abstract class SelectionStatement
@@ -131,9 +129,13 @@ trait CAbstractSyntax {
   
   
   //C Unary operators
-  sealed abstract class UnaryOp //Missing: &*+-~!
-  case object UnaryDecrement extends UnaryOp
-  case object UnaryIncrement extends UnaryOp
+  sealed abstract class UnaryOp 
+  case object Address extends UnaryOp //&
+  case object Deref extends UnaryOp //*
+  case object Positive extends UnaryOp //+
+  case object Negative extends UnaryOp //-
+  case object OnesCompliment extends UnaryOp //
+  case object Negation extends UnaryOp //!
   
   //C Binary Operators
   sealed abstract class BinaryOp
@@ -155,25 +157,7 @@ trait CAbstractSyntax {
   case object BinaryShiftRight extends BinaryOp
   case object BinaryShiftLeft extends BinaryOp
   
-  sealed abstract class ConstantExpressionTest extends Expression //FIXME
-  
-  //TypeName
-  case class TypeName(qualifierSpecifierList: TypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
-  case class TypeSpecifierQualifier(typeSpecifier: TypeSpecifier, typeQualifier: TypeQualifier)
-  
-  //C Expressions
-  sealed abstract class Expression
-  case class AccessExpr (access: Access) extends Expression //x    or  *p    or  a[e]
-  case class Assign (access: Access, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
-  case class Address (access: Access) extends Expression //&x   or  &*p   or  &a[e] 
-  case class ConstantInteger (contents: Integer) extends Expression
-  case class UnaryPrim (operator: UnaryOp, expression: Expression) extends Expression //Unary primitive operator
-  case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends Expression //Binary primitive operator
-  case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
-  case class ConditionalExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
-  case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
-
-  
+  //C AssignmentOperators
   sealed abstract class AssignmentOperator
   case object Equals // =
   case object TimesEquals // *=
@@ -187,11 +171,58 @@ trait CAbstractSyntax {
   case object BitwiseOrEquals // |=
   case object BitwiseXOREquals // ^=
     
+  //TypeName
+  case class TypeName(qualifierSpecifierList: TypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
+  case class TypeSpecifierQualifier(typeSpecifier: TypeSpecifier, typeQualifier: TypeQualifier)
   
-  //C variable access
-  sealed abstract class Access
-  case class AccessVariable (ident: String) extends Access //Variable access  ident
-  case class AccessDeref (expr: Expression) extends Access //Pointer dereferencing  *p
-  case class AccessIndex (access: Access, expr: Expression) extends Access //Access Array indexing  a[e]  
-
+  //C Expressions
+  sealed abstract class Expression
+  case class ConstantExpr (constantExpr: ConstantExpression) extends Expression
+  case class Assign (assignTo: UnaryExpression, operator: AssignmentOperator, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
+  
+  sealed abstract class ConstantExpression
+  case class OtherExpr(otherExpression: OtherExpression) extends OtherExpression
+  case class ConditionalExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends ConstantExpression //e1 ? e2 : e3
+  
+  sealed abstract class OtherExpression
+  case class CastExpr (castExpression: CastExpression) extends OtherExpression
+  case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends OtherExpression //Binary primitive operator
+  
+  sealed abstract class CastExpression
+  case class UnaryExpr(unaryExpr: UnaryExpression) extends CastExpression
+  case class Cast(newType: TypeName, expression: CastExpression) extends CastExpression //(newType) expression;
+  
+  sealed abstract class UnaryExpression
+  case class UnaryPrim (operator: UnaryOp, expression: CastExpression) extends UnaryExpression //Unary primitive operator
+  case class PrefixIncrement (expression: UnaryExpression) extends UnaryExpression
+  case class PrefixDecrement (expression: UnaryExpression) extends UnaryExpression
+  case class SizeofUnary (expression: UnaryExpression) extends UnaryExpression
+  case class SizeofTypeName (typeName: TypeName) extends UnaryExpression
+  case class PostfixExpr (postfixExpr: PostfixExpression) extends UnaryExpression
+  
+  sealed abstract class PostfixExpression
+  case class PrimaryExpr (primaryExpression: PrimaryExpression) extends PostfixExpression
+  case class PostfixIncrement (expression: PostfixExpression) extends PostfixExpression
+  case class PostfixDecrement (expression: PostfixExpression) extends PostfixExpression
+  case class AccessIndex (postfixExpr: PostfixExpression, expr: Expression) extends PostfixExpression //postfix-expression[expression]
+  case class Call (postfixExpression: PostfixExpression, arguments: List[Expression]) extends PostfixExpression //postfix-expression(argument-expression-list_opt)
+  case class AccessMember (postfixExpr: PostfixExpression, memberToAccess: DecIdentifier) extends PostfixExpression //postfix-expression.identifier
+  case class AccessArrowMember (postfixExpr: PostfixExpression, memberToAccess: DecIdentifier) extends PostfixExpression // postfix-expression->identifier
+  
+  sealed abstract class PrimaryExpression
+  case class AccessIdentifier(name: String) extends PrimaryExpression
+  case class ConstantInteger (contents: Integer) extends PrimaryExpression
+  case class ConstantChar (contents: Character) extends PrimaryExpression
+  case class ConstantFloat (contents: Float) extends PrimaryExpression
+  case class ConstantEnumeration extends PrimaryExpression //TODO find out what this is
+  case class String (content: String) extends PrimaryExpression
+  case class ParenthesiseExpr (expression: Expression) extends PrimaryExpression
+  
 }
+
+
+
+
+
+
+
