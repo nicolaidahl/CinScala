@@ -153,6 +153,20 @@ trait CGenerator extends CAbstractSyntax {
     }  
   }
   
+  def generatePointer(varEnv: VarEnv, funEnv: FunEnv)(point: Pointer): String = {
+	  val p = point.pointer match {
+	    case Some(pp) => generatePointer(varEnv, funEnv)(pp)
+	    case None => ""
+	  }
+	  
+	  val q = point.typeQualifier match {
+	    case Some(qs) => qs.mkString(" ")
+	    case None => ""
+	  }
+	  
+	  "*" + q.mkString("", " ", " ") + p
+  }
+  
   def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: DirectDeclarator): (String, String) = {
     dec match {
       case DeclareIdentifier(name) => (name, name)
@@ -167,10 +181,36 @@ trait CGenerator extends CAbstractSyntax {
     	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
     	(ident, str + "[" + exprVal + "]")
       }
+      //case p: ParameterList => generateParameterList(varEnv, funEnv)(p)
+      case IdentifierList(d, i) => {
+        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
+        val is = i match {
+          case Some(ii) => ii.mkString(", ")
+          case None => ""
+        }
+        (ident, is + str)
+      }
     }
   }
   
-  def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers) = {
+  /*def generateParameterList(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): (String, String) = {
+    p match {
+      case NormalDeclaration(decSpecs, dec) => {
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(dec)
+        (ident, generateDeclarationSpecifiers(decSpecs) + " " + str)
+      }
+      case AbstractDeclaration(decSpecs, dec) => {
+        val (ident, str) = generateAbstractDeclarator(varEnv, funEnv)(dec)
+        (ident, generateDeclarationSpecifiers(decSpecs) + " " + str)
+      }
+    }
+  }
+  
+  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclaration): (String, String) = {
+    ("", "")//FIXME
+  }*/
+  
+  def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers): String = {
     val storageSpecifier = decSpecs.storage match {
       case Some(s) => generateStorageSpecifier(s) + " "
       case None => ""

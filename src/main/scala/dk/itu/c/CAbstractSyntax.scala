@@ -48,14 +48,14 @@ trait CAbstractSyntax {
   case class DeclareIdentifier(name: String) extends DirectDeclarator
   case class ParenthesiseDeclarator(declarator: Declarator) extends DirectDeclarator //(declarator)
   case class DeclareArray(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
-  case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-declarator ( param1, param2, ... ) 
-  case class IdentifierList(directDeclarator: DirectDeclarator, identifierList: Option[List[String]])//direct-declarator ( identifier-list_opt )
+  case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) extends DirectDeclarator //direct-declarator ( param1, param2, ... ) 
+  case class IdentifierList(directDeclarator: DirectDeclarator, identifierList: Option[List[String]]) extends DirectDeclarator //direct-declarator ( identifier-list_opt )
   
-  case class Pointer(pointer: Option[Pointer], typeQualifier: Option[TypeQualifier]) //*type-qualifier-list_opt pointer_opt
+  case class Pointer(pointer: Option[Pointer], typeQualifier: Option[List[TypeQualifier]]) //*type-qualifier-list_opt pointer_opt
   
   sealed abstract class ParameterDeclaration
-  case class NormalDeclaration(decSpec: DeclarationSpecifiers, declarator: Declarator)
-  case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator])
+  case class NormalDeclaration(decSpec: DeclarationSpecifiers, declarator: Declarator) extends ParameterDeclaration
+  case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator]) extends ParameterDeclaration
   
   sealed abstract class AbstractDeclarator
   case class AbstractPointer(pointer: Pointer) extends AbstractDeclarator
