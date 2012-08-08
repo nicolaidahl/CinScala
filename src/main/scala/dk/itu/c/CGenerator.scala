@@ -155,10 +155,10 @@ trait CGenerator extends CAbstractSyntax {
   def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: DirectDeclarator): (String, String) = {
     dec match {
       case Identifier(name) => (name, name)
-      case Parenthesise(declarator) => 
+      case ParenthesiseDeclarator(declarator) => 
         val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
         (ident, "(" + str + ")")
-      case Array(dirDecl, expr) => {
+      case DeclareArray(dirDecl, expr) => {
     	val exprVal = expr match {
     	  case Some(e) => generateExpr(varEnv, funEnv)(e)
     	  case None => ""

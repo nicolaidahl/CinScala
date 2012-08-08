@@ -21,6 +21,11 @@ trait CAbstractSyntax {
   case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
   compoundStmt: CompoundStmt) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
+  case class PreprocessorInst (controlLine: ControlLine) extends ExternalDeclaration
+  
+  sealed abstract class ControlLine //TODO implement the rest
+  case class IncludeLocal (fileName: String) extends ControlLine
+  case class IncludeGlobal (fileName: String) extends ControlLine
   
   //Declaration specifier
   case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: TypeSpecifier, qualifier: Option[TypeQualifier])
@@ -28,16 +33,21 @@ trait CAbstractSyntax {
   //Any declaration
   case class Declaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator])
 
+  //Init Declarator (wrapper for Declarator allowing assignment)
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
-  case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
+  case class DeclaratorWithAssign(dec: Declarator, assignment: Initializer) extends InitDeclarator
+  
+  sealed abstract class Initializer
+  case class ExpressionInitializer (expr: Expression) extends Initializer
+  case class Scalar (initializers: List[Initializer]) extends Initializer //{ initializer-list }
   
   case class Declarator(pointer: Option[Pointer], directDeclarator: DirectDeclarator)
   
   sealed abstract class DirectDeclarator
-  case class DecIdentifier(name: String) extends DirectDeclarator
-  case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
-  case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
+  case class DeclareIdentifier(name: String) extends DirectDeclarator
+  case class ParenthesiseDeclarator(declarator: Declarator) extends DirectDeclarator //(declarator)
+  case class DeclareArray(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
   case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-declarator ( param1, param2, ... ) 
   case class IdentifierList(directDeclarator: DirectDeclarator, identifierList: Option[List[String]])//direct-declarator ( identifier-list_opt )
   
@@ -206,8 +216,8 @@ trait CAbstractSyntax {
   case class PostfixDecrement (expression: PostfixExpression) extends PostfixExpression
   case class AccessIndex (postfixExpr: PostfixExpression, expr: Expression) extends PostfixExpression //postfix-expression[expression]
   case class Call (postfixExpression: PostfixExpression, arguments: List[Expression]) extends PostfixExpression //postfix-expression(argument-expression-list_opt)
-  case class AccessMember (postfixExpr: PostfixExpression, memberToAccess: DecIdentifier) extends PostfixExpression //postfix-expression.identifier
-  case class AccessArrowMember (postfixExpr: PostfixExpression, memberToAccess: DecIdentifier) extends PostfixExpression // postfix-expression->identifier
+  case class AccessMember (postfixExpr: PostfixExpression, memberToAccess: DeclareIdentifier) extends PostfixExpression //postfix-expression.identifier
+  case class AccessArrowMember (postfixExpr: PostfixExpression, memberToAccess: DeclareIdentifier) extends PostfixExpression // postfix-expression->identifier
   
   sealed abstract class PrimaryExpression
   case class AccessIdentifier(name: String) extends PrimaryExpression
