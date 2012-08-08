@@ -117,17 +117,21 @@ trait CGenerator extends CAbstractSyntax {
   }*/
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (VarEnv, String) = {
-    var tenv = varEnv
-    var s = List()
     val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
     
-    for (id <- dec.declarators) {
-      val (ident, str) = generateInitDeclarator(varEnv, funEnv)(id)
-      tenv = tenv + (ident -> dec.decSpecs.typeSpec)
-      s ::: List(str)
-    }
+    def buildDeclarators(varEnv: VarEnv, funEnv: FunEnv)(decs: List[InitDeclarator]): (VarEnv, String) =
+      decs match {
+        case Nil => (varEnv, "")
+        case head :: tail => {
+          val (varEnv1, str1) = generateInitDeclarator(varEnv, funEnv)(head)
+          val (varEnv2, str2) = buildDeclarators(varEnv, funEnv)(tail)
+          (varEnv2, str1 + ", " + str2)
+        }
+      }
     
-    (tenv, decSpecs + s.mkString(", "))
+    val (varEnv1, str) = buildDeclarators(varEnv, funEnv)(dec.declarators)
+    
+    (varEnv1, decSpecs + " " + str)
   }
   
   def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: InitDeclarator): (String, String) = {
