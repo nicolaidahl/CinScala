@@ -14,43 +14,39 @@ trait CAbstractSyntax {
   //Top level declaration
   abstract class ExternalDeclaration
   trait FunctionDec extends ExternalDeclaration {
-    val returnType: Option[TypeSpecifier]
-    val identifier: String
-    val parameters: ArgList
-    val stmtOrDecs: List[StmtOrDec]
+    val declarationSpecifiers: Option[DeclarationSpecifiers]
+    val declarator: Declarator
+    val parameters: Option[List[Declaration]]
+    val compoundStmt: CompoundStatement
    }
-  case class CFunctionDec(returnType: Option[TypeSpecifier], identifier: String,
-    parameters: ArgList, stmtOrDecs: List[StmtOrDec]) extends FunctionDec
-  case class Declaration (decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
+
+  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator,
+    parameters: Option[List[Declaration]], compoundStmt: CompoundStatement) extends FunctionDec
+  case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
-  
-  //Statements or declarations
-  sealed abstract class StmtOrDec
-  case class Stmt (statement: Statement) extends StmtOrDec
-  case class Dec (declaration: Declaration) extends StmtOrDec
-  
-  //Declarations
-  /*sealed abstract class Declaration
-  case class LocalVariable (variableType: TypeSpecifier, identifier: String) extends Declaration //int x;
-  case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;*/
   
   //Declaration specifier
   case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: TypeSpecifier, qualifier: Option[TypeQualifier])
-  
+
+  //Any declaration
+  case class Declaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator])
+
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
   case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
   
-  case class Declarator(pointer: Option[PointerTest], directDeclarator: DirectDeclarator)
+  case class Declarator(pointer: Option[Pointer], directDeclarator: DirectDeclarator)
   
   sealed abstract class DirectDeclarator
   case class Identifier(name: String) extends DirectDeclarator
   case class Parenthesise(declarator: Declarator) extends DirectDeclarator //(declarator)
   case class Array(directDeclarator: DirectDeclarator, expr: Option[Expression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
   case class ParameterList(directDeclarator: DirectDeclarator, ptlt: ParameterTypeListTest) //direct-declarator ( parameter-type-list ) 
-  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list opt )
+  case class IdentifierList(directDeclarator: DirectDeclarator, ilo: Option[List[String]])//direct-declarator ( identifier-list_opt )
   
-  sealed abstract class PointerTest
+  case class Pointer(typeQualifier: Option[TypeQualifier], pointer: Option[Pointer]) //*type-qualifier-list_opt pointer_opt
+  
+  
   sealed abstract class ParameterTypeListTest
   
   
@@ -68,7 +64,7 @@ trait CAbstractSyntax {
   case object Volatile extends TypeQualifier
   
   //C statements
-  sealed abstract class Statement
+  /*sealed abstract class Statement
   case class Block (contents: List[StmtOrDec]) extends Statement
   case class ExpressionStatement (expr: Expression) extends Statement
   case class If (condition: Expression, ifBranch: List[StmtOrDec], elseIfBranches: Option[List[(Expression, List[StmtOrDec])]], elseBranch: Option[List[StmtOrDec]]) extends Statement
@@ -76,7 +72,20 @@ trait CAbstractSyntax {
   case class While (condition: Expression, contents: Statement) extends Statement
   case class For (initialization: Expression, condition: Expression, counter: Expression, contents: Statement) extends Statement
   case class DoWhile (contents: Statement, condition: Expression) extends Statement
-  case class Return (returnExpression: Option[Expression]) extends Statement
+  case class Return (returnExpression: Option[Expression]) extends Statement*/
+  
+  sealed abstract class Statement
+  case class LabeledStatement extends Statement
+  case class ExpressionStatement(expr: Option[Expression]) extends Statement
+  case class CompoundStatement(stmtOrDecList: List[StmtOrDec]) extends Statement //{ declaration-list_opt statement-list_opt }
+  case class SelectionStatement extends Statement
+  case class IterationStatement extends Statement
+  case class JumpStatement extends Statement
+
+  //Statements or declarations
+  sealed abstract class StmtOrDec
+  case class Stmt (statement: Statement) extends StmtOrDec
+  case class Dec (declaration: Declaration) extends StmtOrDec
   
   //C types
   sealed abstract class TypeSpecifier
@@ -89,26 +98,43 @@ trait CAbstractSyntax {
   case object TypeDouble extends TypeSpecifier
   case object TypeSigned extends TypeSpecifier
   case object TypeUnsigned extends TypeSpecifier
+  case class  TypeStruct(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends TypeSpecifier
+  case class  TypeStructShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends TypeSpecifier
+  case class  TypeUnion(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends TypeSpecifier
+  case class  TypeUnionShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends TypeSpecifier
+  case class  TypeEnum(ident: Option[String], enumerations: List[EnumerationDec]) extends TypeSpecifier
+  case class  TypeEnumShort(ident: String, enumerations: Option[List[EnumerationDec]]) extends TypeSpecifier
+  
+  
+  case class StructUnionDeclaration(typeQualifier: TypeQualifier, typeSpecifier: TypeSpecifier, declarator: List[Declarator]) //const int foo = 2, bar;
+  
+  case class EnumerationDec(ident: String, assignment: Option[Expression]) //enum ident { foo = 2, bar = 4 };
   
   /*case class TypeArray (arrayType: Type, length: Option[Integer]) extends TypeSpecifier
   case class TypePointer (pointerType: Type) extends TypeSpecifier*/
   
   //C Unary operators
-  sealed abstract class UnaryOp
+  sealed abstract class UnaryOp //Missing: &*+-~!
   case object UnaryDecrement extends UnaryOp
   case object UnaryIncrement extends UnaryOp
-
+  
+  
+  
   //C Binary Operators
   sealed abstract class BinaryOp
   case object BinaryPlus extends BinaryOp
   case object BinaryMinus extends BinaryOp
   case object BinaryTimes extends BinaryOp
   case object BinaryDivide extends BinaryOp
+  case object BinaryModulo extends BinaryOp
   case object BinaryEquals extends BinaryOp
   case object BinaryLessThan extends BinaryOp
   case object BinaryLessThanOrEquals extends BinaryOp
   case object BinaryGreaterThan extends BinaryOp
   case object BinaryGreaterThanOrEquals extends BinaryOp
+  case object BinaryBitwiseOr extends BinaryOp
+  case object BinaryBitwiseAnd extends BinaryOp
+  case object BinaryBitwiseXOR extends BinaryOp
   
   //C Expressions
   sealed abstract class Expression
@@ -124,6 +150,21 @@ trait CAbstractSyntax {
   case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
   case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
 
+  
+  sealed abstract class AssignmentOperator
+  case object Equals // =
+  case object TimesEquals // *=
+  case object DivisionEquals // /=
+  case object ModuloEquals // %=
+  case object PlusEquals // +=
+  case object MinusEquals // -=
+  case object ShiftLeftEquals // <<=
+  case object ShiftRightEquals // >>=
+  case object BitwiseAndEquals // &=
+  case object BitwiseOrEquals // |=
+  case object BitwiseXOREquals // ^=
+    
+  
   //C variable access
   sealed abstract class Access
   case class AccessVariable (ident: String) extends Access //Variable access  ident
