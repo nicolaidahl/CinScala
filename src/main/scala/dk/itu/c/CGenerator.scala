@@ -53,30 +53,30 @@ trait CGenerator extends CAbstractSyntax {
     generateTopDecs(varEnv, funEnv)(prog.contents)._3
   }
   
-  def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
+  /*def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
       case IncludeLoc(s) => "#include \"" + s + "\" \n"
       case IncludeStd(s) => "#include <" + s + "> \n"
     }
-  }
+  }*/
   
   def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) =
 	topDecs match {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
-	      case variable: VariableDec =>
-	        val (varEnv1, str) = generateVariableDec(varEnv, funEnv, variable)
+	      case variable: Declaration =>
+	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable)
 	        val (varEnv2, funEnv1, str1) = generateTopDecs(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
 	      case function: FunctionDec => 
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
 	        val (varEnv1, funEnv2, str1) = generateTopDecs(varEnv, funEnv1)(tail)
 	        (varEnv1, funEnv2, str + str1)
-	      case PrecompileInstr(precompInstr) =>
+	      /*case PrecompileInstr(precompInstr) =>
 	        val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
 	        val (varEnv1, funEnv1, str1) = generateTopDecs(varEnv, funEnv)(tail)
-	        (varEnv1, funEnv1, result + str1)
+	        (varEnv1, funEnv1, result + str1)*/
 	    }
 	    
 	}
@@ -113,29 +113,124 @@ trait CGenerator extends CAbstractSyntax {
   /**
    * Generate a variable declaration
    */
-  def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: VariableDec): (VarEnv, String) = {
+  /*def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: Declaration): (VarEnv, String) = {
     val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
     (varEnv1, generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier) 
+  }*/
+  
+  def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (VarEnv, String) = {
+    var tenv = varEnv
+    var s = List()
+    val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
+    
+    for (id <- dec.declarators) {
+      val (ident, str) = generateInitDeclarator(varEnv, funEnv)(id)
+      tenv + (ident -> dec.decSpecs.typeSpec)
+      s ::: List(str)
+    }
+    
+    (tenv, decSpecs + s.mkString(", "))
   }
   
+  def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: InitDeclarator): (String, String) = {
+    dec match {
+      case DeclaratorWrap(d) => generateDeclarator(varEnv, funEnv)(d)
+      case DeclaratorWithAssign(d, a) => {
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        (ident, str + " = " + a)
+      }
+    }
+  }
   
-  def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (String, VarEnv) = {
+  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: Declarator): (String, String) = {
+    dec.pointer match {
+      case Some(p) => {
+        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
+        (ident, "*" + str) //FIXME
+      }
+      case None => generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
+    }  
+  }
+  
+  def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: DirectDeclarator): (String, String) = {
+    dec match {
+      case Identifier(name) => (name, name)
+      case Parenthesise(declarator) => 
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
+        (ident, "(" + str + ")")
+      case Array(dirDecl, expr) => {
+    	val exprVal = expr match {
+    	  case Some(e) => generateExpr(varEnv, funEnv)(e)
+    	  case None => ""
+    	}
+    	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
+    	(ident, str + "[" + exprVal + "]")
+      }
+    }
+  }
+  
+  def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers) = {
+    val storageSpecifier = decSpecs.storage match {
+      case Some(s) => generateStorageSpecifier(s) + " "
+      case None => ""
+    }
+    val typeSpecifier = generateTypeSpecifier(decSpecs.typeSpec) + " "
+    val typeQualifier = decSpecs.qualifier match {
+      case Some(q) => generateTypeQualifier(q) + " "
+      case None => ""
+    }
+    
+    storageSpecifier + typeSpecifier + typeQualifier
+  }
+  
+  def generateStorageSpecifier(storageSpecs: StorageClassSpecifier) = {
+    storageSpecs match {
+      case Auto => "auto"
+      case Register => "register"
+      case Static => "static"
+      case Extern => "extern"
+      case Typedef => "typedef"
+    }
+  }
+  
+  def generateTypeSpecifier(typeSpec: TypeSpecifier) = {
+    typeSpec match {
+      case TypeVoid => "void"
+      case TypeChar => "char"
+      case TypeShort => "short"
+      case TypeInteger => "int"
+      case TypeLong => "long"
+      case TypeFloat => "float"
+      case TypeDouble => "double"
+      case TypeSigned => "signed"
+      case TypeUnsigned => "unsigned"
+    }
+  }
+  
+  def generateTypeQualifier(typeQual: TypeQualifier) = {
+    typeQual match {
+      case Const => "const"
+      case Volatile => "volatile"
+    }
+  }
+  
+  def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (VarEnv, String) = {
       stmtsordecs match {
-        case Nil => ("", varEnv)
+        case Nil => (varEnv, "")
       	case head :: tail =>
-          val (retString, varEnv1) = generateStmtOrDec(varEnv, funEnv)(head)
-          val (resStringFinal, varEnvFinal) = stmtOrDecLoop(varEnv1, funEnv)(tail)
-          (retString + "\n" + resStringFinal, varEnvFinal)
+          val (varEnv1, retString) = generateStmtOrDec(varEnv, funEnv)(head)
+          val (varEnvFinal, resStringFinal) = stmtOrDecLoop(varEnv1, funEnv)(tail)
+          (varEnvFinal, retString + "\n" + resStringFinal)
       }
     }
     
-  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (String, VarEnv) =
+  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (VarEnv, String) =
     sord match {
-      case Stmt(statement) => (generateStatement(varEnv, funEnv)(statement), varEnv)
+      case Stmt(statement) => (varEnv, generateStatement(varEnv, funEnv)(statement))
       case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
     }
   
-  def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
+  /*def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
     dec match {
     case LocalVariable(varType, identifier) => 
       if(lookupVar(varEnv, identifier))
@@ -153,7 +248,7 @@ trait CGenerator extends CAbstractSyntax {
         val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
         (retString, varEnv1)
       }
-    }
+    }*/
     
   def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
     stmt match {

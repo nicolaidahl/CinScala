@@ -20,17 +20,18 @@ trait CAbstractSyntax {
     val parameters: Option[List[Declaration]]
     val compoundStmt: CompoundStatement
    }
+
   case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator,
     parameters: Option[List[Declaration]], compoundStmt: CompoundStatement) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
   
   //Declaration specifier
-  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
-  
+  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: TypeSpecifier, qualifier: Option[TypeQualifier])
+
   //Any declaration
   case class Declaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator])
-  
+
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
   case class DeclaratorWithAssign(dec: Declarator, assignment: Expression) extends InitDeclarator
