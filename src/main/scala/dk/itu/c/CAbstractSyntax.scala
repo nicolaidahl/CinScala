@@ -6,9 +6,7 @@ trait CAbstractSyntax {
   //Variable environment: Map from identifier to variable type
   type VarEnv = Map[String, TypeSpecifier] 
   //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = Map[String, (Option[TypeSpecifier], ArgList)]
-  //Argument list
-  type ArgList = List[(TypeSpecifier, String)] 
+  type FunEnv = Map[String, List[Declaration]]
   
   case class Program (contents: List[ExternalDeclaration])
   
@@ -17,13 +15,12 @@ trait CAbstractSyntax {
   trait FunctionDec extends ExternalDeclaration {
     val declarationSpecifiers: Option[DeclarationSpecifiers]
     val declarator: Declarator
-    val declaratorList: Option[List[Declarator]]
-    val parameters: Option[List[Declaration]]
+    val declarationList: Option[List[Declaration]]
     val compoundStmt: CompoundStmt
    }
 
-  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declaratorList: Option[List[Declarator]],
-    parameters: Option[List[Declaration]], compoundStmt: CompoundStmt) extends FunctionDec
+  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
+  compoundStmt: CompoundStmt) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
   
