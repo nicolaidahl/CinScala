@@ -155,7 +155,7 @@ trait CAbstractSyntax {
   case object BinaryShiftRight extends BinaryOp
   case object BinaryShiftLeft extends BinaryOp
   
-  sealed abstract class ConstantExpressionTest
+  sealed abstract class ConstantExpressionTest extends Expression //FIXME
   
   //TypeName
   case class TypeName(qualifierSpecifierList: TypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
