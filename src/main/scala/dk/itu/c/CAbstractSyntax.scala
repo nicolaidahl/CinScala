@@ -21,7 +21,7 @@ trait CAbstractSyntax {
   case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
   compoundStmt: CompoundStmt) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
-  case class PreprocessorInst (controlLine: ControlLine) extends ExternalDeclaration
+  case class PreprocessorInstruction (controlLine: ControlLine) extends ExternalDeclaration
   
   sealed abstract class ControlLine //TODO implement the rest
   case class IncludeLocal (fileName: String) extends ControlLine

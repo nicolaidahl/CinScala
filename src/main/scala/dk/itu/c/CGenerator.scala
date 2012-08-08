@@ -48,35 +48,33 @@ trait CGenerator extends CAbstractSyntax {
     
   //Main generate function
   def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
-    
-    
-    generateTopDecs(varEnv, funEnv)(prog.contents)._3
+    generateExternalDeclarations(varEnv, funEnv)(prog.contents)._3
   }
   
-  /*def generatePrecompileInstruction(instr: PrecompileInstruction, varEnv: VarEnv, funEnv: FunEnv) = {
+  def generateControlLine(instr: ControlLine, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
-      case IncludeLoc(s) => "#include \"" + s + "\" \n"
-      case IncludeStd(s) => "#include <" + s + "> \n"
+      case IncludeLocal(s) => "#include \"" + s + "\" \n"
+      case IncludeGlobal(s) => "#include <" + s + "> \n"
     }
-  }*/
+  }
   
-  def generateTopDecs (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) =
+  def generateExternalDeclarations (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[ExternalDeclaration]): (VarEnv, FunEnv, String) =
 	topDecs match {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
 	      case variable: Declaration =>
 	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable)
-	        val (varEnv2, funEnv1, str1) = generateTopDecs(varEnv1, funEnv)(tail)
+	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
 	      case function: FunctionDec => 
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
-	        val (varEnv1, funEnv2, str1) = generateTopDecs(varEnv, funEnv1)(tail)
+	        val (varEnv1, funEnv2, str1) = generateExternalDeclarations(varEnv, funEnv1)(tail)
 	        (varEnv1, funEnv2, str + str1)
-	      /*case PrecompileInstr(precompInstr) =>
-	        val result = generatePrecompileInstruction(precompInstr, varEnv, funEnv)
-	        val (varEnv1, funEnv1, str1) = generateTopDecs(varEnv, funEnv)(tail)
-	        (varEnv1, funEnv1, result + str1)*/
+	      case PreprocessorInstruction(precompInstr) =>
+	        val result = generateControlLine(precompInstr, varEnv, funEnv)
+	        val (varEnv1, funEnv1, str1) = generateExternalDeclarations(varEnv, funEnv)(tail)
+	        (varEnv1, funEnv1, result + str1)
 	    }
 	    
 	}
@@ -108,13 +106,7 @@ trait CGenerator extends CAbstractSyntax {
     (funEnv1, returnType + " " + ident + parametersStr + body)
   }  
 
-  /**
-   * Generate a variable declaration
-   */
-  /*def generateVariableDec(varEnv: VarEnv, funEnv: FunEnv, variableDec: Declaration): (VarEnv, String) = {
-    val varEnv1 = varEnv + (variableDec.identifier -> variableDec.variableType)
-    (varEnv1, generateType(variableDec.variableType, varEnv1, funEnv) + " " + variableDec.identifier) 
-  }*/
+  
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (VarEnv, String) = {
     val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
@@ -223,16 +215,6 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  /*def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (VarEnv, String) = {
-      stmtsordecs match {
-        case Nil => (varEnv, "")
-      	case head :: tail =>
-          val (varEnv1, retString) = generateStmtOrDec(varEnv, funEnv)(head)
-          val (varEnvFinal, resStringFinal) = stmtOrDecLoop(varEnv1, funEnv)(tail)
-          (varEnvFinal, retString + "\n" + resStringFinal)
-      }
-    }*/
-    
   
   /*def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
     dec match {
@@ -254,52 +236,7 @@ trait CGenerator extends CAbstractSyntax {
       }
     }*/
     
-  /*def generateStatement(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String =
-    stmt match {
-      case Block (contents) => 
-        "{\n" + stmtOrDecLoop(varEnv, funEnv)(contents)._1 + "\n}"
-      case ExpressionStatement (expr) => generateExpr(varEnv, funEnv)(expr) + ";"
-      case If (condition, ifBranch, elseIfBranches, elseBranch) => 
-        val ifStr = 
-          "if(" + generateExpr(varEnv, funEnv)(condition) + ")\n{\n" +
-          stmtOrDecLoop(varEnv, funEnv)(ifBranch)._1 + "}\n" 
-        val elseBranchesStr = 
-          elseIfBranches match {
-            case None => ""
-            case Some(bs) => bs.map(b => "else if(" + generateExpr(varEnv, funEnv)(b._1) + ")\n{\n" + stmtOrDecLoop(varEnv, funEnv)(b._2)._1) + "\n}\n"
-          }
-        
-        val elseStr = 
-          elseBranch match {
-            case None => ""
-            case Some(s) => "else\n{\n" + stmtOrDecLoop(varEnv, funEnv)(s)._1 + "}\n"
-          }
-          
-        ifStr + elseBranchesStr + elseStr
-      case Switch (expr, cases, default) =>
-        def generateCase(aCase: (Expression, List[StmtOrDec])): String = 
-          "case " + generateExpr(varEnv, funEnv)(aCase._1) + ":\n" + stmtOrDecLoop(varEnv, funEnv)(aCase._2)._1 + "break;\n"
-        
-        val switchStr = "switch(" + generateExpr(varEnv, funEnv)(expr) + "){\n"
-        val casesStr = cases.map(generateCase).mkString
-        val defaultStr = 
-          default match {
-            case None => ""
-            case Some(l) => "default: \n" + stmtOrDecLoop(varEnv, funEnv)(l)._1 +"\nbreak;\n"
-          }
-        
-        switchStr + casesStr + defaultStr + "}\n"
-      case While (condition, contents) => 
-        "while(" + generateExpr(varEnv, funEnv)(condition) + ")" +
-        generateStatement(varEnv, funEnv)(contents)
-      case For (initialization, condition, counter, contents) =>
-        "for(" + generateExpr(varEnv, funEnv)(initialization) + ";" + generateExpr(varEnv, funEnv)(condition) + ";" + generateExpr(varEnv, funEnv)(counter) + ")" + 
-        generateStatement(varEnv, funEnv)(contents)
-      case DoWhile (contents, condition) =>
-        "do " + generateStatement(varEnv, funEnv)(contents) + "\n" +
-        "while(" + generateExpr(varEnv, funEnv)(condition) + ");"
-      case Return (returnExpression) => "return " + returnExpression.map(generateExpr(varEnv, funEnv)).getOrElse("") + ";"
-    }*/
+  
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: Statement): String = {
     stmt match {
