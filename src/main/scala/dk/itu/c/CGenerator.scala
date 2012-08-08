@@ -297,6 +297,7 @@ trait CGenerator extends CAbstractSyntax {
           }
         })
         "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
+        
       }
       case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ")\n"
     }
@@ -326,7 +327,7 @@ trait CGenerator extends CAbstractSyntax {
       case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"*/
     }
   
-  def generateUnaryOp(ope: UnaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
+  def generateUnaryOp(ope: UnaryOp): String =
     ope match {
       case Address => "&"
       case Deref => "*"
@@ -336,7 +337,7 @@ trait CGenerator extends CAbstractSyntax {
       case Negation => "!"
     }
   
-  def generateBinaryOp(ope: BinaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
+  def generateBinaryOp(ope: BinaryOp): String =
     ope match {
       case BinaryPlus => "+"
       case BinaryMinus => "-"
@@ -357,10 +358,33 @@ trait CGenerator extends CAbstractSyntax {
       case BinaryShiftLeft => "<<"
     }
     
+  def generateAssignmentOp(ope: AssignmentOperator): String =
+    ope match {
+      case Equals => "="
+      case TimesEquals => "*="
+      case DivisionEquals => "/="
+      case ModuloEquals => "%="
+      case PlusEquals => "+="
+      case MinusEquals => "-="
+      case ShiftLeftEquals => "<<="
+      case ShiftRightEquals => ">>="
+      case BitwiseAndEquals => "&="
+      case BitwiseOrEquals => "|="
+      case BitwiseXOREquals => "^="
+    }
     
   def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
-    /*e match {
-      case AccessExpr(access) => generateAccess(access, varEnv, funEnv)
+    e match {
+    case Assign(assignTo, operator, expr) =>  //TODO make sure this works with the varEnv
+      val assignToStr = generateUnaryExpression(varEnv, funEnv)(assignTo)
+      val opeStr = generateAssignmentOp(operator)
+      val exprStr = generateExpression(varEnv, funEnv)(expr)
+      assignToStr + " " + opeStr + " " + exprStr
+    case ConstantExpr(cstexpr) => generateConstantExpression(varEnv, funEnv)(cstexpr)
+  }
+  
+  /*def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
+    e match {
       case Assign(access, expr) => 
         generateAccess(access, varEnv, funEnv) + " = " + generateExpr(varEnv, funEnv)(expr)
       case Address(access) => ""
@@ -377,16 +401,36 @@ trait CGenerator extends CAbstractSyntax {
         if(!lookupFunc(funEnv, identifier))
           printf("Warning: Function " + identifier + " is unknown.\n\n")
         identifier + args.map(generateExpr(varEnv, funEnv)).mkString("(", ", ", ")")
-      case ConditionExpression(expr1, expr2, expr3) => 
-        generateExpr(varEnv, funEnv)(expr1) + " ? " + generateExpr(varEnv, funEnv)(expr2) + " : " + generateExpr(varEnv, funEnv)(expr3)
       case Cast(expr, newType) => 
         "(" + generateType(newType, varEnv, funEnv) + ") " + generateExpr(varEnv, funEnv)(expr)
     }*/
-    ""
   
   def generateConstantExpression(varEnv: VarEnv, funEnv: FunEnv)(e: ConstantExpression): String =
+    e match {
+      case GeneralExpr(expr) => generateGeneralExpression(varEnv, funEnv)(expr)
+      case ConditionalExpression(expr1, expr2, expr3) => 
+        generateGeneralExpression(varEnv, funEnv)(expr1) + " ? " + generateExpression(varEnv, funEnv)(expr2) + " : " + generateConstantExpression(varEnv, funEnv)(expr3)
+  	}
+  
+  def generateGeneralExpression(varEnv: VarEnv, funEnv: FunEnv)(e: GeneralExpression): String = 
+    e match {
+      case CastExpr(castExpr) => generateCastExpression(varEnv, funEnv)(castExpr)
+      case BinaryPrim(ope, expr1, expr2) =>
+        generateExpression(varEnv, funEnv)(expr1) + " " + generateBinaryOp(ope) + " " + generateExpression(varEnv, funEnv)(expr2)
+    }
+    
+  def generateCastExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CastExpression): String =
+    ""
+    
+  def generateUnaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: UnaryExpression): String =
     ""
   
+  def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: PostfixExpression): String =
+    ""
+    
+  def generatePrimaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: PrimaryExpression): String =
+    ""
+    
   /*def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
     a match {
       case AccessVariable(identifier) => 
