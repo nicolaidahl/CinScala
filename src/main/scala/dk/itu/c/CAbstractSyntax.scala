@@ -1,4 +1,5 @@
 package dk.itu.c
+import com.sun.source.tree.LabeledStatementTree
 
 trait CAbstractSyntax {
   
@@ -63,24 +64,35 @@ trait CAbstractSyntax {
   case object Volatile extends TypeQualifier
   
   //C statements
-  /*sealed abstract class Statement
-  case class Block (contents: List[StmtOrDec]) extends Statement
-  case class ExpressionStatement (expr: Expression) extends Statement
-  case class If (condition: Expression, ifBranch: List[StmtOrDec], elseIfBranches: Option[List[(Expression, List[StmtOrDec])]], elseBranch: Option[List[StmtOrDec]]) extends Statement
-  case class Switch (switchExpr: Expression, cases: List[(Expression, List[StmtOrDec])], default: Option[List[StmtOrDec]]) extends Statement
-  case class While (condition: Expression, contents: Statement) extends Statement
-  case class For (initialization: Expression, condition: Expression, counter: Expression, contents: Statement) extends Statement
-  case class DoWhile (contents: Statement, condition: Expression) extends Statement
-  case class Return (returnExpression: Option[Expression]) extends Statement*/
-  
   sealed abstract class Statement
-  case class LabeledStatement extends Statement
-  case class ExpressionStatement(expr: Option[Expression]) extends Statement
-  case class CompoundStatement(stmtOrDecList: List[StmtOrDec]) extends Statement //{ declaration-list_opt statement-list_opt }
-  case class SelectionStatement extends Statement
-  case class IterationStatement extends Statement
-  case class JumpStatement extends Statement
+  case class LabeledStmt(labeledStmt: LabeledStatement) extends Statement
+  case class ExpressionStmt(expr: Option[Expression]) extends Statement
+  case class CompoundStmt(stmtOrDecList: List[StmtOrDec]) extends Statement //{ declaration-list_opt statement-list_opt }
+  case class SelectionStmt(selectionStmt: SelectionStatement) extends Statement
+  case class IterationStmt(iterationStatement: IterationStatement) extends Statement
+  case class JumpStmt(jumpStatement: JumpStatement) extends Statement
 
+  sealed abstract class LabeledStatement
+  case class IdentColonStmt(ident: String, stmt: Statement) extends LabeledStatement //ident : stmt
+  case class CaseStmt(expr: ConstantExpressionTest, stmt: Statement) extends LabeledStatement // case expr : stmt
+  case class DefaultCaseStmt(stmt: Statement) extends LabeledStatement // default : stmt
+  
+  sealed abstract class SelectionStatement
+  case class If (condition: Expression, stmt: Statement) extends SelectionStatement
+  case class IfElse(condition: Expression, trueBranch: Statement, elseBranch: Statement) extends SelectionStatement
+  case class Switch (switchExpr: Expression, stmt: Statement) extends SelectionStatement //switch(expression) statement
+  
+  sealed abstract class IterationStatement
+  case class While (condition: Expression, contents: Statement) extends IterationStatement
+  case class For (initialization: Option[Expression], condition: Option[Expression], counter: Option[Expression], contents: Statement) extends IterationStatement
+  case class DoWhile (contents: Statement, condition: Expression) extends IterationStatement
+  
+  sealed abstract class JumpStatement
+  case class Goto(identifier: String) extends JumpStatement
+  case object Continue extends JumpStatement
+  case object Break extends JumpStatement
+  case class Return (returnExpression: Option[Expression]) extends JumpStatement
+  
   //Statements or declarations
   sealed abstract class StmtOrDec
   case class Stmt (statement: Statement) extends StmtOrDec
@@ -109,15 +121,11 @@ trait CAbstractSyntax {
   
   case class EnumerationDec(ident: String, assignment: Option[Expression]) //enum ident { foo = 2, bar = 4 };
   
-  /*case class TypeArray (arrayType: Type, length: Option[Integer]) extends TypeSpecifier
-  case class TypePointer (pointerType: Type) extends TypeSpecifier*/
   
   //C Unary operators
   sealed abstract class UnaryOp //Missing: &*+-~!
   case object UnaryDecrement extends UnaryOp
   case object UnaryIncrement extends UnaryOp
-  
-  
   
   //C Binary Operators
   sealed abstract class BinaryOp
@@ -135,6 +143,8 @@ trait CAbstractSyntax {
   case object BinaryBitwiseAnd extends BinaryOp
   case object BinaryBitwiseXOR extends BinaryOp
   
+  sealed abstract class ConstantExpressionTest
+  
   //C Expressions
   sealed abstract class Expression
   case class AccessExpr (access: Access) extends Expression //x    or  *p    or  a[e]
@@ -146,7 +156,7 @@ trait CAbstractSyntax {
   case class SeqAnd (expr1: Expression, expr2: Expression) extends Expression //Sequential and &&
   case class SeqOr (expr1: Expression, expr2: Expression) extends Expression //Sequential or ||
   case class Call (ident: String, args: List[Expression]) extends Expression //Function call f(...)
-  case class ConditionExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
+  case class ConditionalExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends Expression //e1 ? e2 : e3
   case class Cast(expression: Expression, newType: TypeSpecifier) extends Expression //(int) a;
 
   
