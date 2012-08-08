@@ -144,7 +144,7 @@ trait CAbstractSyntax {
   case object Deref extends UnaryOp //*
   case object Positive extends UnaryOp //+
   case object Negative extends UnaryOp //-
-  case object OnesCompliment extends UnaryOp //
+  case object OnesCompliment extends UnaryOp //~ 
   case object Negation extends UnaryOp //!
   
   //C Binary Operators

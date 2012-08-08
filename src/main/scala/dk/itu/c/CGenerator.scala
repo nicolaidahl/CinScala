@@ -135,8 +135,15 @@ trait CGenerator extends CAbstractSyntax {
       case DeclaratorWrap(d) => generateDeclarator(varEnv, funEnv)(d)
       case DeclaratorWithAssign(d, a) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
-        (ident, str + " = " + a)
+        (ident, str + " = " + generateInitializer(varEnv, funEnv)(a))
       }
+    }
+  }
+  
+  def generateInitializer(varEnv: VarEnv, funEnv: FunEnv)(init: Initializer): String = {
+    init match {
+      case ExpressionInitializer(expr) => generateExpression(varEnv, funEnv)(expr)
+      case Scalar(initializers) => "{" + initializers.map(i => generateInitializer(varEnv, funEnv)(i)).mkString(", ") + "}"
     }
   }
   
@@ -158,7 +165,7 @@ trait CGenerator extends CAbstractSyntax {
         (ident, "(" + str + ")")
       case DeclareArray(dirDecl, expr) => {
     	val exprVal = expr match {
-    	  case Some(e) => generateExpr(varEnv, funEnv)(e)
+    	  case Some(e) => generateExpression(varEnv, funEnv)(e)
     	  case None => ""
     	}
     	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
@@ -212,7 +219,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (VarEnv, String) = {
+  /*def stmtOrDecLoop(varEnv: VarEnv, funEnv: FunEnv)(stmtsordecs: List[StmtOrDec]): (VarEnv, String) = {
       stmtsordecs match {
         case Nil => (varEnv, "")
       	case head :: tail =>
@@ -220,13 +227,8 @@ trait CGenerator extends CAbstractSyntax {
           val (varEnvFinal, resStringFinal) = stmtOrDecLoop(varEnv1, funEnv)(tail)
           (varEnvFinal, retString + "\n" + resStringFinal)
       }
-    }
+    }*/
     
-  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (VarEnv, String) =
-    sord match {
-      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
-      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
-    }
   
   /*def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
     dec match {
@@ -299,7 +301,7 @@ trait CGenerator extends CAbstractSyntax {
     stmt match {
       case LabeledStmt(ls) => generateLabeledStmt(varEnv, funEnv)(ls)
       case ExpressionStmt(expr) => expr match {
-          case Some(es) => generateExpr(varEnv, funEnv)(es) + ";"
+          case Some(es) => generateExpression(varEnv, funEnv)(es) + ";"
           case None => ";"
         }
       case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
@@ -312,10 +314,17 @@ trait CGenerator extends CAbstractSyntax {
   def generateLabeledStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: LabeledStatement): String = {
     stmt match {
       case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
-      case CaseStmt(e, s) => "case " + generateExpr(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
+      case CaseStmt(e, s) => "case " + generateConstantExpression(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
       case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
     }
   }
+  
+  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (VarEnv, String) =
+    sord match {
+      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
+      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
+    }
+
   
   def generateCompoundStmt(varEnv: VarEnv, funEnv: FunEnv)(stmts: List[StmtOrDec]): String = {
     stmts match {
@@ -330,25 +339,25 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateSelectionStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: SelectionStatement): String = {
     stmt match {
-      case If(e, s) => "if(" + generateExpr(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
-      case IfElse(e, s1, s2) => "if(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
-      case Switch(e, s) => "switch(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
+      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
     }
   }
   
   def generateIterationStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: IterationStatement): String = {
     stmt match {
-      case While(e, s) => "while(" + generateExpr(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
       case For(i, e, c, s) => {
         val ss = List(i, e, c).map({
           case expr => expr match {
-            case Some(e) => generateExpr(varEnv, funEnv)(e)
+            case Some(e) => generateExpression(varEnv, funEnv)(e)
             case None => ""
           }
         })
         "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
       }
-      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpr(varEnv, funEnv)(e) + ")\n"
+      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ")\n"
     }
   }
   
@@ -359,7 +368,7 @@ trait CGenerator extends CAbstractSyntax {
       case Break => "break;"
       case Return(e) => {
         val es = e match {
-          case Some(expr) => generateExpr(varEnv, funEnv)(expr)
+          case Some(expr) => generateExpression(varEnv, funEnv)(expr)
           case None => ""
         }
         "return " + es
@@ -378,8 +387,12 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateUnaryOp(ope: UnaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
     ope match {
-      case UnaryDecrement => "--"
-      case UnaryIncrement => "++"
+      case Address => "&"
+      case Deref => "*"
+      case Positive => "+"
+      case Negative => "-"
+      case OnesCompliment => "~"
+      case Negation => "!"
     }
   
   def generateBinaryOp(ope: BinaryOp, varEnv: VarEnv, funEnv: FunEnv): String =
@@ -388,16 +401,24 @@ trait CGenerator extends CAbstractSyntax {
       case BinaryMinus => "-"
       case BinaryTimes => "*"
       case BinaryDivide => "/"
-      case BinaryEquals => "="
+      case BinaryModulo => "%"
+      case BinaryEquality => "=="
       case BinaryLessThan => "<"
       case BinaryLessThanOrEquals => "<="
       case BinaryGreaterThan => ">"
-      case inaryGreaterThanOrEquals => ">="
+      case BinaryGreaterThanOrEquals => ">="
+      case BinaryBitwiseOr => "|"
+      case BinaryBitwiseAnd => "&"
+      case BinaryBitwiseXOR => "^"
+      case BinaryLogicalAnd => "&&"
+      case BinaryLogicalOr => "||"
+      case BinaryShiftRight => ">>"
+      case BinaryShiftLeft => "<<"
     }
     
     
-  def generateExpr(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
-    e match {
+  def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
+    /*e match {
       case AccessExpr(access) => generateAccess(access, varEnv, funEnv)
       case Assign(access, expr) => 
         generateAccess(access, varEnv, funEnv) + " = " + generateExpr(varEnv, funEnv)(expr)
@@ -419,10 +440,13 @@ trait CGenerator extends CAbstractSyntax {
         generateExpr(varEnv, funEnv)(expr1) + " ? " + generateExpr(varEnv, funEnv)(expr2) + " : " + generateExpr(varEnv, funEnv)(expr3)
       case Cast(expr, newType) => 
         "(" + generateType(newType, varEnv, funEnv) + ") " + generateExpr(varEnv, funEnv)(expr)
-    }
+    }*/
+    ""
   
+  def generateConstantExpression(varEnv: VarEnv, funEnv: FunEnv)(e: ConstantExpression): String =
+    ""
   
-  def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
+  /*def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
     a match {
       case AccessVariable(identifier) => 
         if(lookupVar(varEnv, identifier))
@@ -431,7 +455,7 @@ trait CGenerator extends CAbstractSyntax {
           throw new UnknownVariableException("The variable " + identifier + " does not exist in the current scope.")
       case AccessDeref(expr) => "*" + generateExpr(varEnv, funEnv)(expr)
       case AccessIndex(access, expr) => generateAccess(access, varEnv, funEnv) + "[" + generateExpr(varEnv, funEnv)(expr) + "]"
-    }
+    }*/
     
   
 }
