@@ -103,7 +103,7 @@ trait CGenerator extends CAbstractSyntax {
       case d => generateDeclaration(varEnv, funEnv)(d)
     }).mkString("(", ", ", ")"))
     
-    val body = "{\n" + generateStatement(varEnv, funEnv1)(functionDec.compoundStmt) + "\n}"
+    val body = "{\n" + generateStmt(varEnv, funEnv1)(functionDec.compoundStmt) + "\n}"
 
     (funEnv1, returnType + " " + ident + parametersStr + body)
   }  
@@ -152,7 +152,7 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: DirectDeclarator): (String, String) = {
     dec match {
-      case Identifier(name) => (name, name)
+      case DeclareIdentifier(name) => (name, name)
       case ParenthesiseDeclarator(declarator) => 
         val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
         (ident, "(" + str + ")")
@@ -224,7 +224,7 @@ trait CGenerator extends CAbstractSyntax {
     
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: StmtOrDec): (VarEnv, String) =
     sord match {
-      case Stmt(statement) => (varEnv, generateStatement(varEnv, funEnv)(statement))
+      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
       case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
     }
   
