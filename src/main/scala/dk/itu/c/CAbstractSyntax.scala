@@ -35,7 +35,7 @@ trait CAbstractSyntax {
   case class LocalVariableWithAssign (variableType: TypeSpecifier, identifier: String, expr: Expression) extends Declaration //int x = e;*/
   
   //Declaration specifier
-  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: Option[TypeSpecifier], qualifier: Option[TypeQualifier])
+  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: TypeSpecifier, qualifier: Option[TypeQualifier])
   
   sealed abstract class InitDeclarator
   case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
