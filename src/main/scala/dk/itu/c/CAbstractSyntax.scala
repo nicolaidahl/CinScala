@@ -52,8 +52,13 @@ trait CAbstractSyntax {
   case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator])
   
   sealed abstract class AbstractDeclarator
-  case class AbstractPointer(pointer: Pointer)
+  case class AbstractPointer(pointer: Pointer) extends AbstractDeclarator
+  case class NormalDirectAbstractDeclarator(pointer: Option[Pointer], directAbDec: DirectAbstractDeclarator) extends AbstractDeclarator //pointer_opt direct-abstract-declarator
   
+  sealed abstract class DirectAbstractDeclarator
+  case class ParenthesiseAbDec(abstractDeclarator: AbstractDeclarator) extends DirectAbstractDeclarator
+  case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: ConstantExpressionTest) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
+  case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage class
   sealed abstract class StorageClassSpecifier
