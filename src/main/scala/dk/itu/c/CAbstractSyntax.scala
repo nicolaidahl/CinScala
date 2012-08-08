@@ -17,11 +17,12 @@ trait CAbstractSyntax {
   trait FunctionDec extends ExternalDeclaration {
     val declarationSpecifiers: Option[DeclarationSpecifiers]
     val declarator: Declarator
+    val declaratorList: Option[List[Declarator]]
     val parameters: Option[List[Declaration]]
     val compoundStmt: CompoundStmt
    }
 
-  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator,
+  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declaratorList: Option[List[Declarator]],
     parameters: Option[List[Declaration]], compoundStmt: CompoundStmt) extends FunctionDec
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   
