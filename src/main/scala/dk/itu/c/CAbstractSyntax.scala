@@ -215,7 +215,7 @@ trait CAbstractSyntax {
   case class ConstantChar (contents: Character) extends PrimaryExpression
   case class ConstantFloat (contents: Float) extends PrimaryExpression
   case class ConstantEnumeration extends PrimaryExpression //TODO find out what this is
-  case class String (content: String) extends PrimaryExpression
+  case class CharArray (content: String) extends PrimaryExpression
   case class ParenthesiseExpr (expression: Expression) extends PrimaryExpression
   
 }
