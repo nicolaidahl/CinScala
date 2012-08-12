@@ -90,7 +90,7 @@ trait CAbstractSyntax {
   sealed abstract class DirectAbstractDeclarator
   case class ParenthesiseAbDec(abstractDeclarator: AbstractDeclarator) extends DirectAbstractDeclarator
   case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: ConstantExpression) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
-  case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) //direct-abstract-declarator_opt (parameter-type-list_opt)
+  case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) extends DirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage class
   sealed abstract class StorageClassSpecifier
