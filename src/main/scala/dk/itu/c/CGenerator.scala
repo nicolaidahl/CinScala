@@ -181,7 +181,11 @@ trait CGenerator extends CAbstractSyntax {
     	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
     	(ident, str + "[" + exprVal + "]")
       }
-      //case p: ParameterList => generateParameterList(varEnv, funEnv)(p)
+      case ParameterList(d, p, e) => {
+        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
+        val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkstring(", ")
+        (ident, str + "(" + ps + ")")
+      } 
       case IdentifierList(d, i) => {
         val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
         val is = i match {
@@ -193,7 +197,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  /*def generateParameterList(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): (String, String) = {
+  def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): String = {
     p match {
       case NormalDeclaration(decSpecs, dec) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(dec)
@@ -208,7 +212,7 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclaration): (String, String) = {
     ("", "")//FIXME
-  }*/
+  }
   
   def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers): String = {
     val storageSpecifier = decSpecs.storage match {
