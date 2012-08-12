@@ -197,11 +197,6 @@ trait CAbstractSyntax {
   sealed abstract class GeneralExpression
   case class CastExpr (castExpression: CastExpression) extends GeneralExpression
   case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends GeneralExpression //Binary primitive operator
-  case class ConstantInteger (contents: Integer) extends GeneralExpression
-  case class ConstantChar (contents: Character) extends GeneralExpression
-  case class ConstantFloat (contents: Float) extends GeneralExpression
-  case object ConstantEnumeration extends GeneralExpression //TODO find out what this is
-  case class CharArray (content: String) extends GeneralExpression
   
   sealed abstract class CastExpression
   case class UnaryExpr(unaryExpr: UnaryExpression) extends CastExpression
@@ -226,6 +221,11 @@ trait CAbstractSyntax {
   
   sealed abstract class PrimaryExpression
   case class AccessIdentifier(name: String) extends PrimaryExpression
+  case class ConstantInteger (contents: Integer) extends PrimaryExpression
+  case class ConstantChar (contents: Character) extends PrimaryExpression
+  case class ConstantFloat (contents: Float) extends PrimaryExpression
+  case object ConstantEnumeration extends PrimaryExpression //TODO find out what this is
+  case class CharArray (content: String) extends PrimaryExpression
   case class ParenthesiseExpr (expression: Expression) extends PrimaryExpression
   
 }
