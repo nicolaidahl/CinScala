@@ -169,17 +169,17 @@ trait CAbstractSyntax {
   
   //C AssignmentOperators
   sealed abstract class AssignmentOperator
-  case object Equals // =
-  case object TimesEquals // *=
-  case object DivisionEquals // /=
-  case object ModuloEquals // %=
-  case object PlusEquals // +=
-  case object MinusEquals // -=
-  case object ShiftLeftEquals // <<=
-  case object ShiftRightEquals // >>=
-  case object BitwiseAndEquals // &=
-  case object BitwiseOrEquals // |=
-  case object BitwiseXOREquals // ^=
+  case object Equals extends AssignmentOperator // =
+  case object TimesEquals extends AssignmentOperator // *=
+  case object DivisionEquals extends AssignmentOperator // /=
+  case object ModuloEquals extends AssignmentOperator // %=
+  case object PlusEquals extends AssignmentOperator // +=
+  case object MinusEquals extends AssignmentOperator // -=
+  case object ShiftLeftEquals extends AssignmentOperator // <<=
+  case object ShiftRightEquals extends AssignmentOperator // >>=
+  case object BitwiseAndEquals extends AssignmentOperator // &=
+  case object BitwiseOrEquals extends AssignmentOperator // |=
+  case object BitwiseXOREquals extends AssignmentOperator // ^=
     
   //TypeName
   case class TypeName(qualifierSpecifierList: TypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
@@ -191,12 +191,12 @@ trait CAbstractSyntax {
   case class Assign (assignTo: UnaryExpression, operator: AssignmentOperator, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
   
   sealed abstract class ConstantExpression
-  case class OtherExpr(otherExpression: OtherExpression) extends OtherExpression
-  case class ConditionalExpression (expr1: Expression, expr2: Expression, expr3: Expression) extends ConstantExpression //e1 ? e2 : e3
+  case class GeneralExpr(otherExpression: GeneralExpression) extends ConstantExpression
+  case class ConditionalExpression (expr1: GeneralExpression, expr2: Expression, expr3: ConstantExpression) extends ConstantExpression //e1 ? e2 : e3
   
-  sealed abstract class OtherExpression
-  case class CastExpr (castExpression: CastExpression) extends OtherExpression
-  case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends OtherExpression //Binary primitive operator
+  sealed abstract class GeneralExpression
+  case class CastExpr (castExpression: CastExpression) extends GeneralExpression
+  case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends GeneralExpression //Binary primitive operator
   
   sealed abstract class CastExpression
   case class UnaryExpr(unaryExpr: UnaryExpression) extends CastExpression
@@ -224,7 +224,7 @@ trait CAbstractSyntax {
   case class ConstantInteger (contents: Integer) extends PrimaryExpression
   case class ConstantChar (contents: Character) extends PrimaryExpression
   case class ConstantFloat (contents: Float) extends PrimaryExpression
-  case class ConstantEnumeration extends PrimaryExpression //TODO find out what this is
+  case object ConstantEnumeration extends PrimaryExpression //TODO find out what this is
   case class CharArray (content: String) extends PrimaryExpression
   case class ParenthesiseExpr (expression: Expression) extends PrimaryExpression
   
