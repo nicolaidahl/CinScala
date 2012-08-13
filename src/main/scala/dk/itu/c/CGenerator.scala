@@ -330,27 +330,44 @@ trait CGenerator extends CAbstractSyntax {
           case None => ";"
         }
       case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
-      case stmt: CLabeledStatement => generateLabeledStmt(varEnv, funEnv)(stmt)
-      case stmt: CSelectionStatement => generateSelectionStmt(varEnv, funEnv)(stmt)
-      case stmt: CIterationStatement => generateIterationStmt(varEnv, funEnv)(stmt)
-      case stmt: CJumpStatement => generateJumpStmt(varEnv, funEnv)(stmt)
-    }
-  }
-  
-  def generateLabeledStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CLabeledStatement): String = {
-    stmt match {
+      
+      //Labeled Statements
       case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
       case CaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
       case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
+      
+      //Iteration Statements
+      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case For(i, e, c, s) => {
+        val ss = List(i, e, c).map({
+          case expr => expr match {
+            case Some(e) => generateExpression(varEnv, funEnv)(e)
+            case None => ""
+          }
+        })
+        "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
+        
+      }
+      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ")\n"
+
+      //Selection Statements
+      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
+      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+
+      //Jump Statements
+      case Goto(i) => "goto " + i + ";"
+      case Continue => "continue;"
+      case Break => "break;"
+      case Return(e) => {
+        val es = e match {
+          case Some(expr) => generateExpression(varEnv, funEnv)(expr)
+          case None => ""
+        }
+        "return " + es
+      }
     }
   }
-  
-  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
-    sord match {
-      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
-      case LocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
-    }
-
   
   def generateCompoundStmt(varEnv: VarEnv, funEnv: FunEnv)(stmts: List[CStmtOrDec]): String = {
     def buildStmts(varEnv: VarEnv, funEnv:FunEnv)(stmts:List[CStmtOrDec]): String = {
@@ -367,45 +384,12 @@ trait CGenerator extends CAbstractSyntax {
     "{\n" + buildStmts(varEnv, funEnv)(stmts) + "\n}\n"
   }
   
-  def generateSelectionStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CSelectionStatement): String = {
-    stmt match {
-      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
-      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
-      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+  def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
+    sord match {
+      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
+      case LocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
     }
-  }
-  
-  def generateIterationStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CIterationStatement): String = {
-    stmt match {
-      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
-      case For(i, e, c, s) => {
-        val ss = List(i, e, c).map({
-          case expr => expr match {
-            case Some(e) => generateExpression(varEnv, funEnv)(e)
-            case None => ""
-          }
-        })
-        "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
-        
-      }
-      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ")\n"
-    }
-  }
-  
-  def generateJumpStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CJumpStatement): String = {
-    stmt match {
-      case Goto(i) => "goto " + i + ";"
-      case Continue => "continue;"
-      case Break => "break;"
-      case Return(e) => {
-        val es = e match {
-          case Some(expr) => generateExpression(varEnv, funEnv)(expr)
-          case None => ""
-        }
-        "return " + es
-      }
-    }
-  }
+
   
   def generateUnaryOp(ope: CUnaryOp): String =
     ope match {
