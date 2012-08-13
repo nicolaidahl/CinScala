@@ -13,8 +13,10 @@ trait CUDAAbstractSyntax extends CAbstractSyntax {
   case class CUDAHostType extends CUDAFunctionQualifier
   case class CUDANoInlineType extends CUDAFunctionQualifier
   
-  
-  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CPostfixExpression
+  trait CUDAPostfixExpression extends CPostfixExpression
+  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CUDAPostfixExpression
+  case class CUDAKernelCallExtensive(dimGrid: Integer, dimBlock: Integer, sharedMemory: Option[Integer], cudaStream: Option[Integer], 
+      postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CUDAPostfixExpression
   
   
 }

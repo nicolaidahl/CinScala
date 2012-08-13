@@ -32,107 +32,107 @@ trait CAbstractSyntax {
   //Variable environment: Map from identifier to variable type
   type VarEnv = Map[String, CTypeSpecifier] 
   //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = Map[String, List[Declaration]]
+  type FunEnv = Map[String, List[CDeclaration]]
   
-  case class Program (contents: List[ExternalDeclaration])
+  case class CProgram (contents: List[CExternalDeclaration])
   
   //Top level declaration
-  abstract class ExternalDeclaration
-  case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
-  compoundStmt: CompoundStmt) extends ExternalDeclaration
-  case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
-  case class PreprocessorInstruction (controlLine: ControlLine) extends ExternalDeclaration
+  abstract class CExternalDeclaration
+  case class CFunctionDec(declarationSpecifiers: Option[CDeclarationSpecifiers], declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
+  compoundStmt: CompoundStmt) extends CExternalDeclaration
+  case class GlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
+  case class PreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
   
-  sealed abstract class ControlLine //TODO implement the rest
-  case class IncludeLocal (fileName: String) extends ControlLine
-  case class IncludeGlobal (fileName: String) extends ControlLine
+  sealed abstract class CControlLine //TODO implement the rest
+  case class IncludeLocal (fileName: String) extends CControlLine
+  case class IncludeGlobal (fileName: String) extends CControlLine
   
   //Declaration specifier
-  case class DeclarationSpecifiers(storage: Option[StorageClassSpecifier], typeSpec: CTypeSpecifier, qualifier: Option[TypeQualifier])
+  case class CDeclarationSpecifiers(storage: Option[CStorageClassSpecifier], typeSpec: CTypeSpecifier, qualifier: Option[CTypeQualifier])
 
   //Any declaration
-  case class Declaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator])
+  case class CDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator])
 
   //Init Declarator (wrapper for Declarator allowing assignment)
-  sealed abstract class InitDeclarator
-  case class DeclaratorWrap(dec: Declarator) extends InitDeclarator
-  case class DeclaratorWithAssign(dec: Declarator, assignment: Initializer) extends InitDeclarator
+  sealed abstract class CInitDeclarator
+  case class DeclaratorWrap(dec: CDeclarator) extends CInitDeclarator
+  case class DeclaratorWithAssign(dec: CDeclarator, assignment: CInitializer) extends CInitDeclarator
   
-  sealed abstract class Initializer
-  case class ExpressionInitializer (expr: CExpression) extends Initializer
-  case class Scalar (initializers: List[Initializer]) extends Initializer //{ initializer-list }
+  sealed abstract class CInitializer
+  case class ExpressionInitializer (expr: CExpression) extends CInitializer
+  case class Scalar (initializers: List[CInitializer]) extends CInitializer //{ initializer-list }
   
-  case class Declarator(pointer: Option[Pointer], directDeclarator: DirectDeclarator)
+  case class CDeclarator(pointer: Option[CPointer], directDeclarator: CDirectDeclarator)
   
-  sealed abstract class DirectDeclarator
-  case class DeclareIdentifier(name: String) extends DirectDeclarator
-  case class ParenthesiseDeclarator(declarator: Declarator) extends DirectDeclarator //(declarator)
-  case class DeclareArray(directDeclarator: DirectDeclarator, expr: Option[CExpression]) extends DirectDeclarator //direct-declarator [ constant-expressionopt ]
-  case class ParameterList(directDeclarator: DirectDeclarator, paramList: List[ParameterDeclaration], ellipsis: Boolean) extends DirectDeclarator //direct-declarator ( param1, param2, ... ) 
-  case class IdentifierList(directDeclarator: DirectDeclarator, identifierList: Option[List[String]]) extends DirectDeclarator //direct-declarator ( identifier-list_opt )
+  sealed abstract class CDirectDeclarator
+  case class DeclareIdentifier(name: String) extends CDirectDeclarator
+  case class ParenthesiseDeclarator(declarator: CDeclarator) extends CDirectDeclarator //(declarator)
+  case class DeclareArray(directDeclarator: CDirectDeclarator, expr: Option[CExpression]) extends CDirectDeclarator //direct-declarator [ constant-expressionopt ]
+  case class ParameterList(directDeclarator: CDirectDeclarator, paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectDeclarator //direct-declarator ( param1, param2, ... ) 
+  case class IdentifierList(directDeclarator: CDirectDeclarator, identifierList: Option[List[String]]) extends CDirectDeclarator //direct-declarator ( identifier-list_opt )
   
-  case class Pointer(pointer: Option[Pointer], typeQualifier: Option[List[TypeQualifier]]) //*type-qualifier-list_opt pointer_opt
+  case class CPointer(pointer: Option[CPointer], typeQualifier: Option[List[CTypeQualifier]]) //*type-qualifier-list_opt pointer_opt
   
-  sealed abstract class ParameterDeclaration
-  case class NormalDeclaration(decSpec: DeclarationSpecifiers, declarator: Declarator) extends ParameterDeclaration
-  case class AbstractDeclaration(decSpec: DeclarationSpecifiers, abstractDeclarator: Option[AbstractDeclarator]) extends ParameterDeclaration
+  sealed abstract class CParameterDeclaration
+  case class NormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
+  case class AbstractDeclaration(decSpec: CDeclarationSpecifiers, abstractDeclarator: Option[CAbstractDeclarator]) extends CParameterDeclaration
   
-  sealed abstract class AbstractDeclarator
-  case class AbstractPointer(pointer: Pointer) extends AbstractDeclarator
-  case class NormalDirectAbstractDeclarator(pointer: Option[Pointer], directAbDec: DirectAbstractDeclarator) extends AbstractDeclarator //pointer_opt direct-abstract-declarator
+  sealed abstract class CAbstractDeclarator
+  case class AbstractPointer(pointer: CPointer) extends CAbstractDeclarator
+  case class NormalDirectAbstractDeclarator(pointer: Option[CPointer], directAbDec: CDirectAbstractDeclarator) extends CAbstractDeclarator //pointer_opt direct-abstract-declarator
   
-  sealed abstract class DirectAbstractDeclarator
-  case class ParenthesiseAbDec(abstractDeclarator: AbstractDeclarator) extends DirectAbstractDeclarator
-  case class ArrayAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], expr: CConstantExpression) extends DirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
-  case class FunctionAbDec(directAbstractDeclarator: Option[DirectAbstractDeclarator], paramList: List[ParameterDeclaration], ellipsis: Boolean) extends DirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
+  sealed abstract class CDirectAbstractDeclarator
+  case class ParenthesiseAbDec(abstractDeclarator: CAbstractDeclarator) extends CDirectAbstractDeclarator
+  case class ArrayAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], expr: CConstantExpression) extends CDirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
+  case class FunctionAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage class
-  sealed abstract class StorageClassSpecifier
-  case object Auto extends StorageClassSpecifier
-  case object Register extends StorageClassSpecifier
-  case object Static extends StorageClassSpecifier
-  case object Extern extends StorageClassSpecifier
-  case object Typedef extends StorageClassSpecifier
+  sealed abstract class CStorageClassSpecifier
+  case object Auto extends CStorageClassSpecifier
+  case object Register extends CStorageClassSpecifier
+  case object Static extends CStorageClassSpecifier
+  case object Extern extends CStorageClassSpecifier
+  case object Typedef extends CStorageClassSpecifier
 
   //Type qualifier
-  sealed abstract class TypeQualifier
-  case object Const extends TypeQualifier
-  case object Volatile extends TypeQualifier
+  sealed abstract class CTypeQualifier
+  case object Const extends CTypeQualifier
+  case object Volatile extends CTypeQualifier
   
   //C statements
-  sealed abstract class Statement
-  case class LabeledStmt(labeledStmt: LabeledStatement) extends Statement
-  case class ExpressionStmt(expr: Option[CExpression]) extends Statement
-  case class CompoundStmt(stmtOrDecList: List[StmtOrDec]) extends Statement //{ declaration-list_opt statement-list_opt }
-  case class SelectionStmt(selectionStmt: SelectionStatement) extends Statement
-  case class IterationStmt(iterationStatement: IterationStatement) extends Statement
-  case class JumpStmt(jumpStatement: JumpStatement) extends Statement
+  sealed abstract class CStatement
+  case class LabeledStmt(labeledStmt: CLabeledStatement) extends CStatement
+  case class ExpressionStmt(expr: Option[CExpression]) extends CStatement
+  case class CompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
+  case class SelectionStmt(selectionStmt: CSelectionStatement) extends CStatement
+  case class IterationStmt(iterationStatement: CIterationStatement) extends CStatement
+  case class JumpStmt(jumpStatement: CJumpStatement) extends CStatement
 
-  sealed abstract class LabeledStatement
-  case class LabelStmt(ident: String, stmt: Statement) extends LabeledStatement //ident : stmt
-  case class CaseStmt(expr: CConstantExpression, stmt: Statement) extends LabeledStatement // case expr : stmt
-  case class DefaultCaseStmt(stmt: Statement) extends LabeledStatement // default : stmt
+  sealed abstract class CLabeledStatement
+  case class LabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt
+  case class CaseStmt(expr: CConstantExpression, stmt: CStatement) extends CLabeledStatement // case expr : stmt
+  case class DefaultCaseStmt(stmt: CStatement) extends CLabeledStatement // default : stmt
   
-  sealed abstract class SelectionStatement
-  case class If (condition: CExpression, stmt: Statement) extends SelectionStatement
-  case class IfElse(condition: CExpression, trueBranch: Statement, elseBranch: Statement) extends SelectionStatement
-  case class Switch (switchExpr: CExpression, stmt: Statement) extends SelectionStatement //switch(expression) statement
+  sealed abstract class CSelectionStatement
+  case class If (condition: CExpression, stmt: CStatement) extends CSelectionStatement
+  case class IfElse(condition: CExpression, trueBranch: CStatement, elseBranch: CStatement) extends CSelectionStatement
+  case class Switch (switchExpr: CExpression, stmt: CStatement) extends CSelectionStatement //switch(expression) statement
   
-  sealed abstract class IterationStatement
-  case class While (condition: CExpression, contents: Statement) extends IterationStatement
-  case class For (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: Statement) extends IterationStatement
-  case class DoWhile (contents: Statement, condition: CExpression) extends IterationStatement
+  sealed abstract class CIterationStatement
+  case class While (condition: CExpression, contents: CStatement) extends CIterationStatement
+  case class For (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: CStatement) extends CIterationStatement
+  case class DoWhile (contents: CStatement, condition: CExpression) extends CIterationStatement
   
-  sealed abstract class JumpStatement
-  case class Goto(identifier: String) extends JumpStatement
-  case object Continue extends JumpStatement
-  case object Break extends JumpStatement
-  case class Return (returnExpression: Option[CExpression]) extends JumpStatement
+  sealed abstract class CJumpStatement
+  case class Goto(identifier: String) extends CJumpStatement
+  case object Continue extends CJumpStatement
+  case object Break extends CJumpStatement
+  case class Return (returnExpression: Option[CExpression]) extends CJumpStatement
   
   //Statements or declarations
-  sealed abstract class StmtOrDec
-  case class Stmt (statement: Statement) extends StmtOrDec
-  case class Dec (declaration: Declaration) extends StmtOrDec
+  sealed abstract class CStmtOrDec
+  case class Stmt (statement: CStatement) extends CStmtOrDec
+  case class Dec (declaration: CDeclaration) extends CStmtOrDec
   
   //C types
   sealed abstract class CTypeSpecifier
@@ -145,18 +145,16 @@ trait CAbstractSyntax {
   case object TypeDouble extends CTypeSpecifier
   case object TypeSigned extends CTypeSpecifier
   case object TypeUnsigned extends CTypeSpecifier
-  case class  TypeStruct(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends CTypeSpecifier
-  case class  TypeStructShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends CTypeSpecifier
-  case class  TypeUnion(ident: Option[String], structDeclarations: List[StructUnionDeclaration]) extends CTypeSpecifier
-  case class  TypeUnionShort(ident: String, structDeclarations: Option[List[StructUnionDeclaration]]) extends CTypeSpecifier
-  case class  TypeEnum(ident: Option[String], enumerations: List[EnumerationDec]) extends CTypeSpecifier
-  case class  TypeEnumShort(ident: String, enumerations: Option[List[EnumerationDec]]) extends CTypeSpecifier
+  case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
+  case class  TypeStructShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
+  case class  TypeUnion(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
+  case class  TypeUnionShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
+  case class  TypeEnum(ident: Option[String], enumerations: List[CEnumerationDec]) extends CTypeSpecifier
+  case class  TypeEnumShort(ident: String, enumerations: Option[List[CEnumerationDec]]) extends CTypeSpecifier
   
+  case class CStructUnionDeclaration(typeQualifier: CTypeQualifier, typeSpecifier: CTypeSpecifier, declarator: List[CDeclarator]) //const int foo = 2, bar;
   
-  case class StructUnionDeclaration(typeQualifier: TypeQualifier, typeSpecifier: CTypeSpecifier, declarator: List[Declarator]) //const int foo = 2, bar;
-  
-  case class EnumerationDec(ident: String, assignment: Option[CExpression]) //enum ident { foo = 2, bar = 4 };
-  
+  case class CEnumerationDec(ident: String, assignment: Option[CExpression]) //enum ident { foo = 2, bar = 4 };
   
   //C Unary operators
   abstract class CUnaryOp 
@@ -202,8 +200,8 @@ trait CAbstractSyntax {
   case object BitwiseXOREquals extends CAssignmentOperator // ^=
     
   //TypeName
-  case class CTypeName(qualifierSpecifierList: CTypeSpecifierQualifier, abstractDeclarator: Option[AbstractDeclarator])
-  case class CTypeSpecifierQualifier(typeSpecifier: CTypeSpecifier, typeQualifier: TypeQualifier)
+  case class CTypeName(qualifierSpecifierList: CTypeSpecifierQualifier, abstractDeclarator: Option[CAbstractDeclarator])
+  case class CTypeSpecifierQualifier(typeSpecifier: CTypeSpecifier, typeQualifier: CTypeQualifier)
   
   //C Expressions
   abstract class CExpression
