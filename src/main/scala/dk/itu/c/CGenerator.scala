@@ -181,7 +181,11 @@ trait CGenerator extends CAbstractSyntax {
     	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
     	(ident, str + "[" + exprVal + "]")
       }
-      //case p: ParameterList => generateParameterList(varEnv, funEnv)(p)
+      case ParameterList(d, p, e) => {
+        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
+        val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
+        (ident, str + "(" + ps + ")")
+      } 
       case IdentifierList(d, i) => {
         val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
         val is = i match {
@@ -193,22 +197,66 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  /*def generateParameterList(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): (String, String) = {
+  def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): String = {
     p match {
       case NormalDeclaration(decSpecs, dec) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(dec)
-        (ident, generateDeclarationSpecifiers(decSpecs) + " " + str)
+        generateDeclarationSpecifiers(decSpecs) + " " + str
       }
       case AbstractDeclaration(decSpecs, dec) => {
-        val (ident, str) = generateAbstractDeclarator(varEnv, funEnv)(dec)
-        (ident, generateDeclarationSpecifiers(decSpecs) + " " + str)
+        val (ident, str) = dec match {
+          case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
+          case None => ("", "")
+        }
+        generateDeclarationSpecifiers(decSpecs) + " " + str
       }
     }
   }
   
-  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclaration): (String, String) = {
-    ("", "")//FIXME
-  }*/
+  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): (String, String) = {
+    a match {
+      case AbstractPointer(p) => ("", generatePointer(varEnv, funEnv)(p)) //FIXME
+      case NormalDirectAbstractDeclarator(p, dec) => {
+        val ps = p match {
+          case Some(p) => generatePointer(varEnv, funEnv)(p)
+          case None => ""
+        }
+        val (ident, str) = generateDirectAbstractDeclarator(varEnv, funEnv)(dec)
+        
+        (ident, ps + str)
+      }
+    }
+  }
+  
+  def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: DirectAbstractDeclarator): (String, String) = {
+    dac match {
+      case ParenthesiseAbDec(a) => {
+        val (ident, str) = generateAbstractDeclarator(varEnv, funEnv)(a)
+        (ident, "(" + str + ")")
+      }
+      case ArrayAbDec(d, e) => {
+        val (ident, str) = d match {
+          case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
+          case None => ("", "") //FIXME
+        }
+        
+        (ident, str + "[" + generateConstantExpression(varEnv, funEnv)(e) + "]")
+      }
+      case FunctionAbDec(d, p, e) => {
+        val (ident, str) = d match {
+          case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
+          case None => ("", "") //FIXME
+        }
+        
+        val es = e match {
+          case true => "..."
+          case false => ""
+        }
+        
+        (ident, str + "(" + p.map(p => generateParameterDeclaration(varEnv, funEnv)(p)).mkString(", ") + es + ")")
+      }
+    }
+  }
   
   def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers): String = {
     val storageSpecifier = decSpecs.storage match {
