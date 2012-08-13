@@ -27,6 +27,7 @@ furnished to do so, subject to the following conditions:
 package dk.itu.c
 import scala.collection.mutable.HashMap
 import scala.dbc.syntax.StatementExpression
+import com.sun.source.tree.LabeledStatementTree
 
 trait CGenerator extends CAbstractSyntax {
   
@@ -324,15 +325,15 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CStatement): String = {
     stmt match {
-      case LabeledStmt(ls) => generateLabeledStmt(varEnv, funEnv)(ls)
       case ExpressionStmt(expr) => expr match {
           case Some(es) => generateExpression(varEnv, funEnv)(es) + ";"
           case None => ";"
         }
       case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
-      case SelectionStmt(ss) => generateSelectionStmt(varEnv, funEnv)(ss)
-      case IterationStmt(is) => generateIterationStmt(varEnv, funEnv)(is)
-      case JumpStmt(js) => generateJumpStmt(varEnv, funEnv)(js)
+      case stmt: CLabeledStatement => generateLabeledStmt(varEnv, funEnv)(stmt)
+      case stmt: CSelectionStatement => generateSelectionStmt(varEnv, funEnv)(stmt)
+      case stmt: CIterationStatement => generateIterationStmt(varEnv, funEnv)(stmt)
+      case stmt: CJumpStatement => generateJumpStmt(varEnv, funEnv)(stmt)
     }
   }
   
@@ -468,32 +469,33 @@ trait CGenerator extends CAbstractSyntax {
       val opeStr = generateAssignmentOp(operator)
       val exprStr = generateExpression(varEnv, funEnv)(expr)
       assignToStr + " " + opeStr + " " + exprStr
-    case ConstantExpr(cstexpr) => generateConstantExpression(varEnv, funEnv)(cstexpr)
+    case expr: CPrimaryExpression => generatePrimaryExpression(varEnv, funEnv)(expr)
+    case expr: CPostfixExpression => generatePostfixExpression(varEnv, funEnv)(expr)
+    case expr: CUnaryExpression => generateUnaryExpression(varEnv, funEnv)(expr)
+    case expr: CCastExpression => generateCastExpression(varEnv, funEnv)(expr)
+    case expr: CGeneralExpression => generateGeneralExpression(varEnv, funEnv)(expr)
+    case expr: CConstantExpression => generateConstantExpression(varEnv, funEnv)(expr)
   }
   
   def generateConstantExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CConstantExpression): String =
     e match {
-      case GeneralExpr(expr) => generateGeneralExpression(varEnv, funEnv)(expr)
       case ConditionalExpression(expr1, expr2, expr3) => 
         generateGeneralExpression(varEnv, funEnv)(expr1) + " ? " + generateExpression(varEnv, funEnv)(expr2) + " : " + generateConstantExpression(varEnv, funEnv)(expr3)
   	}
   
   def generateGeneralExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CGeneralExpression): String = 
     e match {
-      case CastExpr(castExpr) => generateCastExpression(varEnv, funEnv)(castExpr)
       case BinaryPrim(ope, expr1, expr2) =>
         generateExpression(varEnv, funEnv)(expr1) + " " + generateBinaryOp(ope) + " " + generateExpression(varEnv, funEnv)(expr2)
     }
     
   def generateCastExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CCastExpression): String =
     e match {
-      case UnaryExpr(unaryExpr) => generateUnaryExpression(varEnv, funEnv)(unaryExpr)
       case Cast(newType, expr) => "(" + generateTypeName(varEnv, funEnv)(newType) + ") " + generateCastExpression(varEnv, funEnv)(expr)
     }
     
   def generateUnaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CUnaryExpression): String =
     e match {
-      case PostfixExpr (postfixExpr) => generatePostfixExpression(varEnv, funEnv)(postfixExpr)
       case UnaryPrim (operator, expression) => generateUnaryOp(operator) + generateCastExpression(varEnv, funEnv)(expression) //Unary primitive operator
       case PrefixIncrement (expression) => "++" + generateUnaryExpression(varEnv, funEnv)(expression)
       case PrefixDecrement (expression) => "--" + generateUnaryExpression(varEnv, funEnv)(expression)
@@ -504,7 +506,6 @@ trait CGenerator extends CAbstractSyntax {
   
   def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPostfixExpression): String =
     e match {
-      case PrimaryExpr (primaryExpression) => generatePrimaryExpression(varEnv, funEnv)(primaryExpression)
       case PostfixIncrement (expression) => generatePostfixExpression(varEnv, funEnv)(expression) + "++"
       case PostfixDecrement (expression) => generatePostfixExpression(varEnv, funEnv)(expression) + "++"
       case AccessIndex (postfixExpr, expr) => 
@@ -521,11 +522,13 @@ trait CGenerator extends CAbstractSyntax {
     
   def generatePrimaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPrimaryExpression): String =
     e match {
+      case AccessIdentifier(name) => name
       case ConstantInteger(contents) => contents.toString()
       case ConstantChar (contents) => contents.toString()
       case ConstantFloat (contents) => contents.toString()
       case ConstantEnumeration => "" //TODO find out what this is
       case CharArray (content) => content
+      case ParenthesiseExpr(content) => generateExpression(varEnv, funEnv)(content)
   }
     
   /*def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =

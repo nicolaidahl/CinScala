@@ -102,29 +102,25 @@ trait CAbstractSyntax {
   
   //C statements
   sealed abstract class CStatement
-  case class LabeledStmt(labeledStmt: CLabeledStatement) extends CStatement
   case class ExpressionStmt(expr: Option[CExpression]) extends CStatement
   case class CompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
-  case class SelectionStmt(selectionStmt: CSelectionStatement) extends CStatement
-  case class IterationStmt(iterationStatement: CIterationStatement) extends CStatement
-  case class JumpStmt(jumpStatement: CJumpStatement) extends CStatement
-
-  sealed abstract class CLabeledStatement
+  
+  sealed abstract class CLabeledStatement extends CStatement
   case class LabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt
   case class CaseStmt(expr: CConstantExpression, stmt: CStatement) extends CLabeledStatement // case expr : stmt
   case class DefaultCaseStmt(stmt: CStatement) extends CLabeledStatement // default : stmt
   
-  sealed abstract class CSelectionStatement
+  sealed abstract class CSelectionStatement extends CStatement
   case class If (condition: CExpression, stmt: CStatement) extends CSelectionStatement
   case class IfElse(condition: CExpression, trueBranch: CStatement, elseBranch: CStatement) extends CSelectionStatement
   case class Switch (switchExpr: CExpression, stmt: CStatement) extends CSelectionStatement //switch(expression) statement
   
-  sealed abstract class CIterationStatement
+  sealed abstract class CIterationStatement extends CStatement
   case class While (condition: CExpression, contents: CStatement) extends CIterationStatement
   case class For (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: CStatement) extends CIterationStatement
   case class DoWhile (contents: CStatement, condition: CExpression) extends CIterationStatement
   
-  sealed abstract class CJumpStatement
+  sealed abstract class CJumpStatement extends CStatement
   case class Goto(identifier: String) extends CJumpStatement
   case object Continue extends CJumpStatement
   case object Break extends CJumpStatement
@@ -206,31 +202,25 @@ trait CAbstractSyntax {
   
   //C Expressions
   abstract class CExpression
-  case class ConstantExpr (constantExpr: CConstantExpression) extends CExpression
   case class Assign (assignTo: CUnaryExpression, operator: CAssignmentOperator, expr: CExpression) extends CExpression  //x=e  or  *p=e  or  a[e]=e 
   
-  abstract class CConstantExpression
-  case class GeneralExpr(otherExpression: CGeneralExpression) extends CConstantExpression
+  abstract class CConstantExpression extends CExpression
   case class ConditionalExpression (expr1: CGeneralExpression, expr2: CExpression, expr3: CConstantExpression) extends CConstantExpression //e1 ? e2 : e3
   
-  abstract class CGeneralExpression
-  case class CastExpr (castExpression: CCastExpression) extends CGeneralExpression
+  abstract class CGeneralExpression extends CConstantExpression
   case class BinaryPrim (operator: CBinaryOp, expression1: CExpression, expression2: CExpression) extends CGeneralExpression //Binary primitive operator
   
-  abstract class CCastExpression
-  case class UnaryExpr(unaryExpr: CUnaryExpression) extends CCastExpression
+  abstract class CCastExpression extends CConstantExpression
   case class Cast(newType: CTypeName, expression: CCastExpression) extends CCastExpression //(newType) expression;
   
-  abstract class CUnaryExpression
+  abstract class CUnaryExpression extends CCastExpression
   case class UnaryPrim (operator: CUnaryOp, expression: CCastExpression) extends CUnaryExpression //Unary primitive operator
   case class PrefixIncrement (expression: CUnaryExpression) extends CUnaryExpression
   case class PrefixDecrement (expression: CUnaryExpression) extends CUnaryExpression
   case class SizeofUnary (expression: CUnaryExpression) extends CUnaryExpression
   case class SizeofTypeName (typeName: CTypeName) extends CUnaryExpression
-  case class PostfixExpr (postfixExpr: CPostfixExpression) extends CUnaryExpression
   
-  abstract class CPostfixExpression
-  case class PrimaryExpr (primaryExpression: CPrimaryExpression) extends CPostfixExpression
+  abstract class CPostfixExpression extends CUnaryExpression
   case class PostfixIncrement (expression: CPostfixExpression) extends CPostfixExpression
   case class PostfixDecrement (expression: CPostfixExpression) extends CPostfixExpression
   case class AccessIndex (postfixExpr: CPostfixExpression, expr: CExpression) extends CPostfixExpression //postfix-expression[expression]
@@ -238,7 +228,7 @@ trait CAbstractSyntax {
   case class AccessMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression //postfix-expression.identifier
   case class AccessArrowMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression // postfix-expression->identifier
   
-  abstract class CPrimaryExpression
+  abstract class CPrimaryExpression extends CPostfixExpression
   case class AccessIdentifier(name: String) extends CPrimaryExpression
   case class ConstantInteger (contents: Integer) extends CPrimaryExpression
   case class ConstantChar (contents: Character) extends CPrimaryExpression
