@@ -4,8 +4,8 @@ package dk.itu.c
 trait CUDAAbstractSyntax extends CAbstractSyntax {
   
   
-  case class CUDAFunctionDec(functionType: CUDAFunctionQualifier, declarationSpecifiers: TypeSpecifier, declarator: Declarator, declarationList: Option[List[Declaration]], 
-  compoundStmt: CompoundStmt) extends ExternalDeclaration
+  case class CUDAFunctionDec(functionType: CUDAFunctionQualifier, declarationSpecifiers: CTypeSpecifier, declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
+  compoundStmt: CompoundStmt) extends CExternalDeclaration
     
   sealed abstract class CUDAFunctionQualifier
   case class CUDAGlobalType extends CUDAFunctionQualifier
@@ -14,7 +14,7 @@ trait CUDAAbstractSyntax extends CAbstractSyntax {
   case class CUDANoInlineType extends CUDAFunctionQualifier
   
   
-  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: PostfixExpression, arguments: List[Expression]) extends PostfixExpression
+  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CPostfixExpression
   
   
 }
