@@ -20,7 +20,7 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
             
             (varEnv1, funEnv2, functionTypeStr + " " + str + str1)
           case _ =>
-            super.generateExternalDeclarations(varEnv, funEnv)(tail)
+            super.generateExternalDeclarations(varEnv, funEnv)(head :: tail)
         }
       
     }
@@ -28,16 +28,30 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
   
   def generateCUDAFunctionQualifier(funcType: CUDAFunctionQualifier): String =
     funcType match {
-      case CUDAGlobalType() => "__global__"
-      case CUDADeviceType() => "__device__"
-      case CUDAHostType() => "__host__"
-      case CUDANoInlineType() => "__noinline__"
+      case CUDAGlobalQualifier() => "__global__"
+      case CUDADeviceFuncQualifier() => "__device__"
+      case CUDAHostQualifier() => "__host__"
+      case CUDANoInlineQualifier() => "__noinline__"
+      case CUDAForceInlineQualifier() => "__forceinline__"
+    }
+  
+  def generateCUDAVariableQualifier(varType: CUDAVariableQualifier): String =
+    varType match {
+      case CUDADeviceVarQualifier() => "__device__"
+      case CUDAConstantQualifier() => "__constant__"
+      case CUDASharedQualifier() => "__shared__"
     }
   
   override def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPostfixExpression): String =
     e match {
       case CUDAKernelCall(dg, db, postfixExpression, arguments) =>
-        ""
+        val cudaCallStr = "<<<" + dg.toString() + ", " + db.toString() + ">>>"
+        generatePostfixExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+      case CUDAKernelCallExtensive(dg, db, ns, stream, postfixExpression, arguments) =>
+        val cudaArgList = List(dg, db, ns.getOrElse(0), stream.getOrElse(0))
+        val cudaCallStr = "<<<" + cudaArgList.mkString(", ") + ">>>"
+        generatePostfixExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+      case other => super.generatePostfixExpression(varEnv, funEnv)(other)
     }
   
 }
