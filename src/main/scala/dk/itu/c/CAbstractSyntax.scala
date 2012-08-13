@@ -25,7 +25,6 @@ furnished to do so, subject to the following conditions:
 */
 
 package dk.itu.c
-import com.sun.source.tree.LabeledStatementTree
 
 trait CAbstractSyntax {
   
@@ -40,7 +39,7 @@ trait CAbstractSyntax {
   abstract class CExternalDeclaration
   case class CFunctionDec(declarationSpecifiers: Option[CDeclarationSpecifiers], declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
   compoundStmt: CompoundStmt) extends CExternalDeclaration
-  case class GlobalDeclaration(dec: CDeclaration) extends CExternalDeclaration
+  case class GlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
   case class PreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
   
   sealed abstract class CControlLine //TODO implement the rest
@@ -51,7 +50,6 @@ trait CAbstractSyntax {
   case class CDeclarationSpecifiers(storage: Option[CStorageClassSpecifier], typeSpec: CTypeSpecifier, qualifier: Option[CTypeQualifier])
 
   //Any declaration
-  case class CLocalDeclaration(dec: CDeclaration)
   case class CDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator])
 
   //Init Declarator (wrapper for Declarator allowing assignment)
@@ -129,7 +127,7 @@ trait CAbstractSyntax {
   //Statements or declarations
   sealed abstract class CStmtOrDec
   case class Stmt (statement: CStatement) extends CStmtOrDec
-  case class Dec (declaration: CLocalDeclaration) extends CStmtOrDec
+  case class LocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
   
   //C types
   sealed abstract class CTypeSpecifier

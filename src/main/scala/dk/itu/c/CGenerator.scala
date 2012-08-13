@@ -64,8 +64,8 @@ trait CGenerator extends CAbstractSyntax {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
-	      case variable: GlobalDeclaration =>
-	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable.dec)
+	      case GlobalDeclaration(decSpecs, declarators) =>
+	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
 	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
 	      case function: CFunctionDec => 
@@ -348,7 +348,7 @@ trait CGenerator extends CAbstractSyntax {
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
     sord match {
       case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
-      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration.dec)
+      case LocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
     }
 
   
