@@ -42,16 +42,16 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
       case CUDASharedQualifier() => "__shared__"
     }
   
-  override def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPostfixExpression): String =
+  override def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
     e match {
       case CUDAKernelCall(dg, db, postfixExpression, arguments) =>
         val cudaCallStr = "<<<" + dg.toString() + ", " + db.toString() + ">>>"
-        generatePostfixExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+        generateExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
       case CUDAKernelCallExtensive(dg, db, ns, stream, postfixExpression, arguments) =>
         val cudaArgList = List(dg, db, ns.getOrElse(0), stream.getOrElse(0))
         val cudaCallStr = "<<<" + cudaArgList.mkString(", ") + ">>>"
-        generatePostfixExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
-      case other => super.generatePostfixExpression(varEnv, funEnv)(other)
+        generateExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+      case other => super.generateExpression(varEnv, funEnv)(other)
     }
   
 }

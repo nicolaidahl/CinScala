@@ -251,7 +251,7 @@ trait CGenerator extends CAbstractSyntax {
           case None => (None, "")
         }
         
-        str + "[" + generateConstantExpression(varEnv, funEnv)(e) + "]"
+        str + "[" + generateExpression(varEnv, funEnv)(e) + "]"
       }
       case FunctionAbDec(d, p, e) => {
         val str = d match {
@@ -340,7 +340,7 @@ trait CGenerator extends CAbstractSyntax {
   def generateLabeledStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CLabeledStatement): String = {
     stmt match {
       case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
-      case CaseStmt(e, s) => "case " + generateConstantExpression(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
+      case CaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
       case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
     }
   }
@@ -462,64 +462,48 @@ trait CGenerator extends CAbstractSyntax {
   def generateTypeSpecifierQualifier(varEnv: VarEnv, funEnv: FunEnv)(tsq: CTypeSpecifierQualifier): String =
     generateTypeQualifier(tsq.typeQualifier) + " " + generateTypeSpecifier(tsq.typeSpecifier)
   
-  def generateAssignmentExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CAssignmentExpression): String =
+  def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
     e match {
+      //Assignment Expression
       case Assign(assignTo, operator, expr) =>  //TODO make sure this works with the varEnv
-        val assignToStr = generateUnaryExpression(varEnv, funEnv)(assignTo)
+        val assignToStr = generateExpression(varEnv, funEnv)(assignTo)
         val opeStr = generateAssignmentOp(operator)
         val exprStr = generateExpression(varEnv, funEnv)(expr)
         assignToStr + " " + opeStr + " " + exprStr
-    }
-  
-  def generateConstantExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CConstantExpression): String =
-    e match {
+    
+      //Conditional Expression
       case ConditionalExpression(expr1, expr2, expr3) => 
-        generateGeneralExpression(varEnv, funEnv)(expr1) + " ? " + generateExpression(varEnv, funEnv)(expr2) + " : " + generateConstantExpression(varEnv, funEnv)(expr3)
-      case expr: CAssignmentExpression => generateAssignmentExpression(varEnv, funEnv)(expr)
-  	}
-  
-  def generateGeneralExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CGeneralExpression): String = 
-    e match {
+        generateExpression(varEnv, funEnv)(expr1) + " ? " + generateExpression(varEnv, funEnv)(expr2) + " : " + generateExpression(varEnv, funEnv)(expr3)
+    
+      //General Expression
       case BinaryPrim(ope, expr1, expr2) =>
         generateExpression(varEnv, funEnv)(expr1) + " " + generateBinaryOp(ope) + " " + generateExpression(varEnv, funEnv)(expr2)
-      case expr: CConstantExpression => generateConstantExpression(varEnv, funEnv)(expr)
-    }
     
-  def generateCastExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CCastExpression): String =
-    e match {
-      case Cast(newType, expr) => "(" + generateTypeName(varEnv, funEnv)(newType) + ") " + generateCastExpression(varEnv, funEnv)(expr)
-      case expr: CGeneralExpression => generateGeneralExpression(varEnv, funEnv)(expr)
-    }
+      //Cast Expression
+	  case Cast(newType, expr) => "(" + generateTypeName(varEnv, funEnv)(newType) + ") " + generateExpression(varEnv, funEnv)(expr)  
     
-  def generateUnaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CUnaryExpression): String =
-    e match {
-      case UnaryPrim (operator, expression) => generateUnaryOp(operator) + generateCastExpression(varEnv, funEnv)(expression) //Unary primitive operator
-      case PrefixIncrement (expression) => "++" + generateUnaryExpression(varEnv, funEnv)(expression)
-      case PrefixDecrement (expression) => "--" + generateUnaryExpression(varEnv, funEnv)(expression)
-      case SizeofUnary (expression) => "sizeof " + generateUnaryExpression(varEnv, funEnv)(expression) 
+      //Unary Expression
+      case UnaryPrim (operator, expression) => generateUnaryOp(operator) + generateExpression(varEnv, funEnv)(expression) //Unary primitive operator
+      case PrefixIncrement (expression) => "++" + generateExpression(varEnv, funEnv)(expression)
+      case PrefixDecrement (expression) => "--" + generateExpression(varEnv, funEnv)(expression)
+      case SizeofUnary (expression) => "sizeof " + generateExpression(varEnv, funEnv)(expression) 
       case SizeofTypeName (typeName) => "sizeof(" + generateTypeName(varEnv, funEnv)(typeName) + ")"
-      case expr: CCastExpression => generateCastExpression(varEnv, funEnv)(expr)      
-  }
-  
-  def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPostfixExpression): String =
-    e match {
-      case PostfixIncrement (expression) => generatePostfixExpression(varEnv, funEnv)(expression) + "++"
-      case PostfixDecrement (expression) => generatePostfixExpression(varEnv, funEnv)(expression) + "++"
+    
+      //Postfix Expressions
+      case PostfixIncrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
+      case PostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
       case AccessIndex (postfixExpr, expr) => 
-        generatePostfixExpression(varEnv,funEnv)(postfixExpr) + "[" + generateExpression(varEnv, funEnv)(expr) + "]"
+        generateExpression(varEnv,funEnv)(postfixExpr) + "[" + generateExpression(varEnv, funEnv)(expr) + "]"
       case Call (postfixExpression, arguments) => 
         //if(!lookupFunc(funEnv, identifier))
         //  printf("Warning: Function " + identifier + " is unknown.\n\n")
-        generatePostfixExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+        generateExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
       case AccessMember (postfixExpr, memberToAccess) => 
-        generatePostfixExpression(varEnv, funEnv)(postfixExpr) + "." + generateDirectDeclarator(varEnv, funEnv)(memberToAccess) 
+        generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDirectDeclarator(varEnv, funEnv)(memberToAccess) 
       case AccessArrowMember (postfixExpr, memberToAccess) =>
-        generatePostfixExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDirectDeclarator(varEnv, funEnv)(memberToAccess)
-      case expr: CUnaryExpression => generatePostfixExpression(varEnv, funEnv)(expr)
-  }
+        generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDirectDeclarator(varEnv, funEnv)(memberToAccess)
     
-  def generatePrimaryExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPrimaryExpression): String =
-    e match {
+	  //Primary Expressions
       case AccessIdentifier(name) => name
       case ConstantInteger(contents) => contents.toString()
       case ConstantChar (contents) => contents.toString()
@@ -527,19 +511,7 @@ trait CGenerator extends CAbstractSyntax {
       case ConstantEnumeration => "" //TODO find out what this is
       case CharArray (content) => content
       case ParenthesiseExpr(content) => generateExpression(varEnv, funEnv)(content)
-      case expr: CPostfixExpression => generatePostfixExpression(varEnv, funEnv)(expr)
-  }
-  
-  
-  def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CAssignmentExpression): String =
-    e match {
-      case expr: CPrimaryExpression => generatePrimaryExpression(varEnv, funEnv)(expr)
-      case expr: CPostfixExpression => generatePostfixExpression(varEnv, funEnv)(expr)
-      case expr: CUnaryExpression => generateUnaryExpression(varEnv, funEnv)(expr)
-      case expr: CCastExpression => generateCastExpression(varEnv, funEnv)(expr)
-      case expr: CGeneralExpression => generateGeneralExpression(varEnv, funEnv)(expr)
-      case expr: CConstantExpression => generateConstantExpression(varEnv, funEnv)(expr)
-      case expr: CAssignmentExpression => generateAssignmentExpression(varEnv, funEnv)(expr)
+      case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
     }
   
     

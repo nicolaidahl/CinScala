@@ -21,9 +21,9 @@ trait CUDAAbstractSyntax extends CAbstractSyntax {
   
   
   sealed abstract class CUDAPostfixExpression extends CPostfixExpression
-  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: CPostfixExpression, arguments: List[CAssignmentExpression]) extends CUDAPostfixExpression
+  case class CUDAKernelCall(dimGrid: Integer, dimBlock: Integer, postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CUDAPostfixExpression
   case class CUDAKernelCallExtensive(dimGrid: Integer, dimBlock: Integer, sharedMemory: Option[Integer], cudaStream: Option[Integer], 
-      postfixExpression: CPostfixExpression, arguments: List[CAssignmentExpression]) extends CUDAPostfixExpression
+      postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CUDAPostfixExpression
   
   
 }
