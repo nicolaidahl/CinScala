@@ -34,7 +34,7 @@ trait CAbstractSyntax {
   //Function environment: Map from identifier to tuple of return type and argument list
   type FunEnv = Map[String, List[CDeclaration]]
   
-  case class CProgram (contents: List[CExternalDeclaration])
+  case class Program (contents: List[CExternalDeclaration])
   
   //Top level declaration
   abstract class CExternalDeclaration

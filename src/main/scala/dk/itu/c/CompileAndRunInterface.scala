@@ -1,29 +1,28 @@
 package dk.itu.c
 
 
-trait CompilerAndRunInterface {
+trait CompileAndRunInterface {
+  this: CAbstractSyntax =>
   
-  type AST
   type Prog
   type Result
   
   val commandRunner = CommandRunner
   
-  def compile(abstractSyntaxTree: AST): Prog
+  def compile(abstractSyntaxTree: Program): Prog
   def run(program: Prog): Result
-  def compileAndRun(abstractSyntaxTree: AST): Result =
+  def compileAndRun(abstractSyntaxTree: Program): Result =
     run(compile(abstractSyntaxTree))
   
 }
 
 
-trait CCompileAndRun extends CompilerAndRunInterface with CGenerator {
+trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
   
-  type AST = CProgram
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: CProgram): Prog = {
+  def compile(abstractSyntaxTree: Program): Prog = {
 	generate(abstractSyntaxTree, getEmptyVarEnv, getEmptyFunEnv)
   }
   
@@ -41,18 +40,23 @@ trait CCompileAndRun extends CompilerAndRunInterface with CGenerator {
 
 
 
-object CUDACompileAndRun extends CompilerAndRunInterface with CUDAGenerator {
+object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
 
-  type AST = CProgram
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: CProgram): Prog = {
-	""
+  def compile(abstractSyntaxTree: Program): Prog = {
+	generate(abstractSyntaxTree, getEmptyVarEnv, getEmptyFunEnv)
   }
   
   def run(program: Prog): Result = {
-    ""
+    val fileName = "cudaProgram"
+    commandRunner.writeToFile(fileName, program)
+    
+    //Compile and run
+    val (_, stderr, exitCode) = commandRunner.run("nvcc -O3 " + fileName + ".cu -o " + fileName)
+    val (stdout, stderr1, exitCode1) = commandRunner.run("./" + fileName)
+    stdout.mkString("\n")
   }
   
   
