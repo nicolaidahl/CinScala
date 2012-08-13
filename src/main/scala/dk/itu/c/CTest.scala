@@ -9,7 +9,7 @@ object Test extends CCompileAndRun with App {
   val globalDecs = GlobalDeclaration(CDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(buildInt(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(buildInt(2)))))) 
   val f = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, DeclareIdentifier("xy")), None, CompoundStmt(List(Stmt(ExpressionStmt(Some(buildInt(3)))))))
   
-  val ast = CProgram(List(globalDecs, f))
+  val ast = Program(List(globalDecs, f))
     
   println(compileAndRun(ast))
 }

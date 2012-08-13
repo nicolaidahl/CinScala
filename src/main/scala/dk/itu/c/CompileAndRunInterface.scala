@@ -59,8 +59,13 @@ object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
     
     //Compile and run
     val (_, stderr, exitCode) = commandRunner.run("nvcc -O3 " + fileName + ".cu -o " + fileName)
-    val (stdout, stderr1, exitCode1) = commandRunner.run("./" + fileName)
-    stdout.mkString("\n")
+    stderr.size match {
+      case 0 => {
+        val (stdout, stderr1, exitCode1) = commandRunner.run("./" + fileName)
+        stdout.mkString("\n")
+      }
+      case _ => stderr.mkString("\n")
+    } 
   }
   
   
