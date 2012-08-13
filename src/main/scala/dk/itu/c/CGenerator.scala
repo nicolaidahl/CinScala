@@ -143,19 +143,22 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: Declarator): (String, String) = {
-    dec.pointer match {
+  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: Declarator): (String, String) = {    
+    val ps = dec.pointer match {
       case Some(p) => {
-        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
-        (ident, "*" + str) //FIXME
+        generatePointer(p)
       }
-      case None => generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
-    }  
+      case None => ""
+    }
+    
+    val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator) 
+    
+    (ident, ps + str) 
   }
   
-  def generatePointer(varEnv: VarEnv, funEnv: FunEnv)(point: Pointer): String = {
+  def generatePointer(point: Pointer): String = {
 	  val p = point.pointer match {
-	    case Some(pp) => generatePointer(varEnv, funEnv)(pp)
+	    case Some(pp) => generatePointer(pp)
 	    case None => ""
 	  }
 	  
@@ -200,13 +203,13 @@ trait CGenerator extends CAbstractSyntax {
   def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: ParameterDeclaration): String = {
     p match {
       case NormalDeclaration(decSpecs, dec) => {
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(dec)
+        val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
       case AbstractDeclaration(decSpecs, dec) => {
-        val (ident, str) = dec match {
+        val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "")
+          case None => ""
         }
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
@@ -215,10 +218,10 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): String = {
     a match {
-      case AbstractPointer(p) => generatePointer(varEnv, funEnv)(p)
+      case AbstractPointer(p) => generatePointer(p)
       case NormalDirectAbstractDeclarator(p, dec) => {
         val ps = p match {
-          case Some(p) => generatePointer(varEnv, funEnv)(p)
+          case Some(p) => generatePointer(p)
           case None => ""
         }
         
