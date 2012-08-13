@@ -213,9 +213,9 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): (String, String) = {
+  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): (Option[String], String) = {
     a match {
-      case AbstractPointer(p) => ("", generatePointer(varEnv, funEnv)(p)) //FIXME
+      case AbstractPointer(p) => (None, generatePointer(varEnv, funEnv)(p))
       case NormalDirectAbstractDeclarator(p, dec) => {
         val ps = p match {
           case Some(p) => generatePointer(varEnv, funEnv)(p)
@@ -228,7 +228,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: DirectAbstractDeclarator): (String, String) = {
+  def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: DirectAbstractDeclarator): (Option[String], String) = {
     dac match {
       case ParenthesiseAbDec(a) => {
         val (ident, str) = generateAbstractDeclarator(varEnv, funEnv)(a)
@@ -237,7 +237,7 @@ trait CGenerator extends CAbstractSyntax {
       case ArrayAbDec(d, e) => {
         val (ident, str) = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "") //FIXME
+          case None => (None, "")
         }
         
         (ident, str + "[" + generateConstantExpression(varEnv, funEnv)(e) + "]")
@@ -245,11 +245,11 @@ trait CGenerator extends CAbstractSyntax {
       case FunctionAbDec(d, p, e) => {
         val (ident, str) = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "") //FIXME
+          case None => (None, "") 
         }
         
         val es = e match {
-          case true => "..."
+          case true => ", ..."
           case false => ""
         }
         
