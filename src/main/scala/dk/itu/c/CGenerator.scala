@@ -217,47 +217,45 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): (String, String) = {
+  def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: AbstractDeclarator): String = {
     a match {
-      case AbstractPointer(p) => ("", generatePointer(varEnv, funEnv)(p)) //FIXME
+      case AbstractPointer(p) => generatePointer(varEnv, funEnv)(p)
       case NormalDirectAbstractDeclarator(p, dec) => {
         val ps = p match {
           case Some(p) => generatePointer(varEnv, funEnv)(p)
           case None => ""
         }
-        val (ident, str) = generateDirectAbstractDeclarator(varEnv, funEnv)(dec)
         
-        (ident, ps + str)
+        ps + generateDirectAbstractDeclarator(varEnv, funEnv)(dec)
       }
     }
   }
   
-  def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: DirectAbstractDeclarator): (String, String) = {
+  def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: DirectAbstractDeclarator): String = {
     dac match {
       case ParenthesiseAbDec(a) => {
-        val (ident, str) = generateAbstractDeclarator(varEnv, funEnv)(a)
-        (ident, "(" + str + ")")
+        "(" + generateAbstractDeclarator(varEnv, funEnv)(a) + ")"
       }
       case ArrayAbDec(d, e) => {
-        val (ident, str) = d match {
+        val str = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "") //FIXME
+          case None => (None, "")
         }
         
-        (ident, str + "[" + generateConstantExpression(varEnv, funEnv)(e) + "]")
+        str + "[" + generateConstantExpression(varEnv, funEnv)(e) + "]"
       }
       case FunctionAbDec(d, p, e) => {
-        val (ident, str) = d match {
+        val str = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "") //FIXME
+          case None => (None, "") 
         }
         
         val es = e match {
-          case true => "..."
+          case true => ", ..."
           case false => ""
         }
         
-        (ident, str + "(" + p.map(p => generateParameterDeclaration(varEnv, funEnv)(p)).mkString(", ") + es + ")")
+        str + "(" + p.map(p => generateParameterDeclaration(varEnv, funEnv)(p)).mkString(", ") + es + ")"
       }
     }
   }
