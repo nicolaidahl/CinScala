@@ -95,18 +95,22 @@ trait CGenerator extends CAbstractSyntax {
     
     val funEnv1 = funEnv + (ident -> parameters)
       
-    val returnTypeStr = generateType(returnType, varEnv, funEnv1)
+    val declarationSpecifiers = for {decSpecs <- functionDec.declarationSpecifiers} yield generateDeclarationSpecifiers(decSpecs)
 
-    val parametersStr = (parameters.map({
-      case d => generateDeclaration(varEnv, funEnv)(d)
-    }).mkString("(", ", ", ")"))
+    val parametersStr = (parameters.map(generateDeclaration(varEnv, funEnv))).mkString("(", ", ", ")")
     
-    val body = "{\n" + generateStmt(varEnv, funEnv1)(functionDec.compoundStmt) + "\n}"
+    val body = generateStmt(varEnv, funEnv1)(functionDec.compoundStmt)
 
-    (funEnv1, returnType + " " + ident + parametersStr + body)
+    (funEnv1, declarationSpecifiers.getOrElse("") + " " + ident + parametersStr + "\n" + body)
   }  
 
   
+  def generateDeclarationSpecifiers(dec: DeclarationSpecifiers): String = {
+    val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st)
+    val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q)
+    
+    storage.getOrElse("") + " " + qualifier.getOrElse("") + " " + generateTypeSpecifier(dec.typeSpec)
+  }
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (VarEnv, String) = {
     val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
@@ -258,21 +262,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateDeclarationSpecifiers(decSpecs: DeclarationSpecifiers): String = {
-    val storageSpecifier = decSpecs.storage match {
-      case Some(s) => generateStorageSpecifier(s) + " "
-      case None => ""
-    }
-    val typeSpecifier = generateTypeSpecifier(decSpecs.typeSpec) + " "
-    val typeQualifier = decSpecs.qualifier match {
-      case Some(q) => generateTypeQualifier(q) + " "
-      case None => ""
-    }
-    
-    storageSpecifier + typeSpecifier + typeQualifier
-  }
-  
-  def generateStorageSpecifier(storageSpecs: StorageClassSpecifier) = {
+  def generateStorageClassSpecifier(storageSpecs: StorageClassSpecifier) = {
     storageSpecs match {
       case Auto => "auto"
       case Register => "register"
@@ -406,14 +396,14 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
     
-  def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv): String = 
+  /*def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv): String = 
     t match {
       case TypeInteger => "int"
       case TypeChar => "char"
-      /*case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
+      case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
       case TypeArray(t, None) => generateType(t, varEnv, funEnv) + "[]"
-      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"*/
-    }
+      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"
+    }*/
   
   def generateUnaryOp(ope: UnaryOp): String =
     ope match {
@@ -461,11 +451,14 @@ trait CGenerator extends CAbstractSyntax {
       case BitwiseXOREquals => "^="
     }
     
-  def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: TypeName): String =
-    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + (for {ad <- tn.abstractDeclarator} yield generateAbstractD)
+  def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: TypeName): String = {
+    val adStr = (for {ad <- tn.abstractDeclarator} yield generateAbstractDeclarator(varEnv, funEnv)(ad))
+    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + adStr.get
     
+  }
+  
   def generateTypeSpecifierQualifier(varEnv: VarEnv, funEnv: FunEnv)(tsq: TypeSpecifierQualifier): String =
-    ""
+    generateTypeQualifier(tsq.typeQualifier) + " " + generateTypeSpecifier(tsq.typeSpecifier)
   
   def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
     e match {
