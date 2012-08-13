@@ -154,7 +154,6 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
     val ps = dec.pointer match {
-
       case Some(p) => {
         generatePointer(p) + " "
       }
@@ -364,7 +363,7 @@ trait CGenerator extends CAbstractSyntax {
           case Some(expr) => generateExpression(varEnv, funEnv)(expr)
           case None => ""
         }
-        "return " + es
+        "return " + es + ";"
       }
     }
   }

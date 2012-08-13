@@ -4,14 +4,14 @@ package dk.itu.c
 object Test extends CCompileAndRun with App {
   val globalDecs = GlobalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(ConstantInteger(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(ConstantInteger(1))))) 
   
-  val abBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(BinaryPrim(BinaryPlus, AccessIdentifier("a"), AccessIdentifier("b")))))))
-  val ab = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, DeclareIdentifier("ab")), None, abBody)
+  val abBody = CompoundStmt(List(Stmt(Return(Some(BinaryPrim(BinaryPlus, AccessIdentifier("a"), AccessIdentifier("b")))))))
+  val ab = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, ParameterList(DeclareIdentifier("ab"), List(), false)), None, abBody)
   
   val mainParams = List(NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), CDeclarator(None, DeclareIdentifier("argc"))), NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, Some(Const)), CDeclarator(Some(CPointer(None, None)), DeclareArray(DeclareIdentifier("argv"), None))))
-  val mainBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(Call(AccessIdentifier("ab"), List()))))))
+  val mainBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(Call(AccessIdentifier("printf"), List(CharArray("\"%d\""), Call(AccessIdentifier("ab"), List())))))), Stmt(Return(Some(ConstantInteger(0))))))
   val main = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, ParameterList(DeclareIdentifier("main"), mainParams, false)), None, mainBody)
   
-  val ast = Program(List(globalDecs, ab, main))
+  val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdio.h")), globalDecs, ab, main))
     
   println(compile(ast))
 }
