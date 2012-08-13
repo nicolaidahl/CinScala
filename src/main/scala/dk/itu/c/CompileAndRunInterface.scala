@@ -19,11 +19,11 @@ trait CompilerAndRunInterface {
 
 trait CCompileAndRun extends CompilerAndRunInterface with CGenerator {
   
-  type AST = Program
+  type AST = CProgram
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: AST): Prog = {
+  def compile(abstractSyntaxTree: CProgram): Prog = {
 	generate(abstractSyntaxTree, getEmptyVarEnv, getEmptyFunEnv)
   }
   
@@ -43,11 +43,11 @@ trait CCompileAndRun extends CompilerAndRunInterface with CGenerator {
 
 object CUDACompileAndRun extends CompilerAndRunInterface with CUDAGenerator {
 
-  type AST = Program
+  type AST = CProgram
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: AST): Prog = {
+  def compile(abstractSyntaxTree: CProgram): Prog = {
 	""
   }
   

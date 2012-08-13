@@ -1,5 +1,12 @@
 package dk.itu.c
 
+object Test extends CCompileAndRun with App {
+  val e = ExpressionInitializer(ConstantExpr(GeneralExpr(CastExpr(UnaryExpr(PostfixExpr(PrimaryExpr(ConstantInteger(2))))))))
+  val ast = Program(List(GlobalDeclaration(DeclarationSpecifiers(None, TypeVoid, None), List(DeclaratorWithAssign(Declarator(None, DeclareIdentifier("Jens")), e)))))
+    
+  println(compile(ast))
+}
+
 /*
 object Test extends CCompileAndRun with App {
   

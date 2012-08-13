@@ -4,7 +4,7 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
 
   
   
-  override def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
+  override def generate (prog: CProgram, varEnv: VarEnv, funEnv: FunEnv): String = {
     generateExternalDeclarations(varEnv, funEnv)(prog.contents)._3
   }
   
