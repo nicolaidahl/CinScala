@@ -27,6 +27,7 @@ furnished to do so, subject to the following conditions:
 package dk.itu.c
 import scala.collection.mutable.HashMap
 import scala.dbc.syntax.StatementExpression
+import com.sun.source.tree.LabeledStatementTree
 
 trait CGenerator extends CAbstractSyntax {
   
@@ -324,15 +325,15 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CStatement): String = {
     stmt match {
-      case LabeledStmt(ls) => generateLabeledStmt(varEnv, funEnv)(ls)
       case ExpressionStmt(expr) => expr match {
           case Some(es) => generateExpression(varEnv, funEnv)(es) + ";"
           case None => ";"
         }
       case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
-      case SelectionStmt(ss) => generateSelectionStmt(varEnv, funEnv)(ss)
-      case IterationStmt(is) => generateIterationStmt(varEnv, funEnv)(is)
-      case JumpStmt(js) => generateJumpStmt(varEnv, funEnv)(js)
+      case stmt: CLabeledStatement => generateLabeledStmt(varEnv, funEnv)(stmt)
+      case stmt: CSelectionStatement => generateSelectionStmt(varEnv, funEnv)(stmt)
+      case stmt: CIterationStatement => generateIterationStmt(varEnv, funEnv)(stmt)
+      case stmt: CJumpStatement => generateJumpStmt(varEnv, funEnv)(stmt)
     }
   }
   

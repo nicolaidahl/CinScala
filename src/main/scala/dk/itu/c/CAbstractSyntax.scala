@@ -102,29 +102,25 @@ trait CAbstractSyntax {
   
   //C statements
   sealed abstract class CStatement
-  case class LabeledStmt(labeledStmt: CLabeledStatement) extends CStatement
   case class ExpressionStmt(expr: Option[CExpression]) extends CStatement
   case class CompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
-  case class SelectionStmt(selectionStmt: CSelectionStatement) extends CStatement
-  case class IterationStmt(iterationStatement: CIterationStatement) extends CStatement
-  case class JumpStmt(jumpStatement: CJumpStatement) extends CStatement
-
-  sealed abstract class CLabeledStatement
+  
+  sealed abstract class CLabeledStatement extends CStatement
   case class LabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt
   case class CaseStmt(expr: CConstantExpression, stmt: CStatement) extends CLabeledStatement // case expr : stmt
   case class DefaultCaseStmt(stmt: CStatement) extends CLabeledStatement // default : stmt
   
-  sealed abstract class CSelectionStatement
+  sealed abstract class CSelectionStatement extends CStatement
   case class If (condition: CExpression, stmt: CStatement) extends CSelectionStatement
   case class IfElse(condition: CExpression, trueBranch: CStatement, elseBranch: CStatement) extends CSelectionStatement
   case class Switch (switchExpr: CExpression, stmt: CStatement) extends CSelectionStatement //switch(expression) statement
   
-  sealed abstract class CIterationStatement
+  sealed abstract class CIterationStatement extends CStatement
   case class While (condition: CExpression, contents: CStatement) extends CIterationStatement
   case class For (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: CStatement) extends CIterationStatement
   case class DoWhile (contents: CStatement, condition: CExpression) extends CIterationStatement
   
-  sealed abstract class CJumpStatement
+  sealed abstract class CJumpStatement extends CStatement
   case class Goto(identifier: String) extends CJumpStatement
   case object Continue extends CJumpStatement
   case object Break extends CJumpStatement
