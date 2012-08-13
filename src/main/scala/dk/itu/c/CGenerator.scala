@@ -413,7 +413,10 @@ trait CGenerator extends CAbstractSyntax {
       case BitwiseXOREquals => "^="
     }
     
-  def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(e: TypeName): String =
+  def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: TypeName): String =
+    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + (for {ad <- tn.abstractDeclarator} yield generateAbstractD)
+    
+  def generateTypeSpecifierQualifier(varEnv: VarEnv, funEnv: FunEnv)(tsq: TypeSpecifierQualifier): String =
     ""
   
   def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
@@ -430,7 +433,6 @@ trait CGenerator extends CAbstractSyntax {
     e match {
       case Assign(access, expr) => 
         generateAccess(access, varEnv, funEnv) + " = " + generateExpr(varEnv, funEnv)(expr)
-      case Address(access) => ""
       
     }*/
   
