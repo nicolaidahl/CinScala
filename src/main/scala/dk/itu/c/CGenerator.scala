@@ -498,7 +498,7 @@ trait CGenerator extends CAbstractSyntax {
       case PrefixDecrement (expression) => "--" + generateUnaryExpression(varEnv, funEnv)(expression)
       case SizeofUnary (expression) => "sizeof " + generateUnaryExpression(varEnv, funEnv)(expression) 
       case SizeofTypeName (typeName) => "sizeof(" + generateTypeName(varEnv, funEnv)(typeName) + ")"
-      case expr: CCastExpression => generateUnaryExpression(varEnv, funEnv)(expr)      
+      case expr: CCastExpression => generateCastExpression(varEnv, funEnv)(expr)      
   }
   
   def generatePostfixExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CPostfixExpression): String =
