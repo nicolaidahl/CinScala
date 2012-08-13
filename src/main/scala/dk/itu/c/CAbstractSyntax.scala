@@ -206,31 +206,25 @@ trait CAbstractSyntax {
   
   //C Expressions
   abstract class CExpression
-  case class ConstantExpr (constantExpr: CConstantExpression) extends CExpression
   case class Assign (assignTo: CUnaryExpression, operator: CAssignmentOperator, expr: CExpression) extends CExpression  //x=e  or  *p=e  or  a[e]=e 
   
-  abstract class CConstantExpression
-  case class GeneralExpr(otherExpression: CGeneralExpression) extends CConstantExpression
+  abstract class CConstantExpression extends CExpression
   case class ConditionalExpression (expr1: CGeneralExpression, expr2: CExpression, expr3: CConstantExpression) extends CConstantExpression //e1 ? e2 : e3
   
-  abstract class CGeneralExpression
-  case class CastExpr (castExpression: CCastExpression) extends CGeneralExpression
+  abstract class CGeneralExpression extends CConstantExpression
   case class BinaryPrim (operator: CBinaryOp, expression1: CExpression, expression2: CExpression) extends CGeneralExpression //Binary primitive operator
   
-  abstract class CCastExpression
-  case class UnaryExpr(unaryExpr: CUnaryExpression) extends CCastExpression
+  abstract class CCastExpression extends CConstantExpression
   case class Cast(newType: CTypeName, expression: CCastExpression) extends CCastExpression //(newType) expression;
   
-  abstract class CUnaryExpression
+  abstract class CUnaryExpression extends CCastExpression
   case class UnaryPrim (operator: CUnaryOp, expression: CCastExpression) extends CUnaryExpression //Unary primitive operator
   case class PrefixIncrement (expression: CUnaryExpression) extends CUnaryExpression
   case class PrefixDecrement (expression: CUnaryExpression) extends CUnaryExpression
   case class SizeofUnary (expression: CUnaryExpression) extends CUnaryExpression
   case class SizeofTypeName (typeName: CTypeName) extends CUnaryExpression
-  case class PostfixExpr (postfixExpr: CPostfixExpression) extends CUnaryExpression
   
-  abstract class CPostfixExpression
-  case class PrimaryExpr (primaryExpression: CPrimaryExpression) extends CPostfixExpression
+  abstract class CPostfixExpression extends CUnaryExpression
   case class PostfixIncrement (expression: CPostfixExpression) extends CPostfixExpression
   case class PostfixDecrement (expression: CPostfixExpression) extends CPostfixExpression
   case class AccessIndex (postfixExpr: CPostfixExpression, expr: CExpression) extends CPostfixExpression //postfix-expression[expression]
@@ -238,7 +232,7 @@ trait CAbstractSyntax {
   case class AccessMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression //postfix-expression.identifier
   case class AccessArrowMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression // postfix-expression->identifier
   
-  abstract class CPrimaryExpression
+  abstract class CPrimaryExpression extends CPostfixExpression
   case class AccessIdentifier(name: String) extends CPrimaryExpression
   case class ConstantInteger (contents: Integer) extends CPrimaryExpression
   case class ConstantChar (contents: Character) extends CPrimaryExpression

@@ -2,16 +2,14 @@ package dk.itu.c
 
 
 object Test extends CCompileAndRun with App {
-  def buildInt(i: Int) = {
-    ConstantExpr(GeneralExpr(CastExpr(UnaryExpr(PostfixExpr(PrimaryExpr(ConstantInteger(i)))))))
-  }
   
-  val globalDecs = GlobalDeclaration(CDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(buildInt(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(buildInt(2)))))) 
-  val f = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, DeclareIdentifier("xy")), None, CompoundStmt(List(Stmt(ExpressionStmt(Some(buildInt(3)))))))
+  
+  val globalDecs = GlobalDeclaration(CDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(ConstantInteger(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(ConstantInteger(3)))))) 
+  val f = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, DeclareIdentifier("xy")), None, CompoundStmt(List(Stmt(ExpressionStmt(Some(ConstantInteger(2)))))))
   
   val ast = Program(List(globalDecs, f))
     
-  println(compileAndRun(ast))
+  println(compile(ast))
 }
 
 /*
