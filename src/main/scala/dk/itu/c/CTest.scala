@@ -5,9 +5,10 @@ object Test extends CCompileAndRun with App {
   def buildInt(i: Int) = {
     ConstantExpr(GeneralExpr(CastExpr(UnaryExpr(PostfixExpr(PrimaryExpr(ConstantInteger(i)))))))
   }
-  
   val globalDecs = GlobalDeclaration(CDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(buildInt(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(buildInt(2)))))) 
-  val f = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, DeclareIdentifier("main")), Some(List(CDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("argc"))))), CDeclaration(CDeclarationSpecifiers(None, TypeInteger, Some(Const)), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("argv"))))))), CompoundStmt(List(Stmt(ExpressionStmt(Some(buildInt(3)))))))
+  
+  val fParams = List(NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), CDeclarator(None, DeclareIdentifier("argc"))), NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, Some(Const)), CDeclarator(Some(CPointer(None, None)), DeclareArray(DeclareIdentifier("argv"), None))))
+  val f = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, ParameterList(DeclareIdentifier("main"), fParams, false)), None, CompoundStmt(List(Stmt(ExpressionStmt(Some(buildInt(3)))))))
   
   val ast = Program(List(globalDecs, f))
     

@@ -88,28 +88,28 @@ trait CGenerator extends CAbstractSyntax {
       case Some(ds) => ds.typeSpec
       case None => TypeInteger
     }
-    val parameters = functionDec.declarationList match {
+    val parameters = functionDec.declarationList match { //FIXME
       case Some(p) => p
       case None => List()
     }
     
-    val funEnv1 = funEnv + (ident -> parameters)
+    val funEnv1 = funEnv + (ident -> parameters)//FIXME
       
     val declarationSpecifiers = for {decSpecs <- functionDec.declarationSpecifiers} yield generateDeclarationSpecifiers(decSpecs)
 
-    val parametersStr = (parameters.map(generateDeclaration(varEnv, funEnv))).mkString("(", ", ", ")")
+    //val parametersStr = (parameters.map(generateDeclaration(varEnv, funEnv))).mkString("(", ", ", ")")
     
-    val body = generateStmt(varEnv, funEnv1)(functionDec.compoundStmt)
+    val body = generateStmt(varEnv, funEnv1)(functionDec.compoundStmt)//FIXME
 
-    (funEnv1, declarationSpecifiers.getOrElse("") + " " + ident + parametersStr + "\n" + body)
+    (funEnv1, declarationSpecifiers.getOrElse("") + " " + str + "\n" + body)
   }  
 
   
   def generateDeclarationSpecifiers(dec: CDeclarationSpecifiers): String = {
-    val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st)
-    val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q)
+    val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st) + " "
+    val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q) + " "
     
-    storage.getOrElse("") + " " + qualifier.getOrElse("") + " " + generateTypeSpecifier(dec.typeSpec)
+    storage.getOrElse("") + qualifier.getOrElse("") + generateTypeSpecifier(dec.typeSpec)
   }
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclaration): (VarEnv, String) = {
