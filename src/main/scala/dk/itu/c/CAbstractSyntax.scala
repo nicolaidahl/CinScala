@@ -38,14 +38,8 @@ trait CAbstractSyntax {
   
   //Top level declaration
   abstract class ExternalDeclaration
-  trait FunctionDec extends ExternalDeclaration {
-    val declarationSpecifiers: Option[DeclarationSpecifiers]
-    val declarator: Declarator
-    val declarationList: Option[List[Declaration]]
-    val compoundStmt: CompoundStmt
-  }
   case class CFunctionDec(declarationSpecifiers: Option[DeclarationSpecifiers], declarator: Declarator, declarationList: Option[List[Declaration]], 
-  compoundStmt: CompoundStmt) extends FunctionDec
+  compoundStmt: CompoundStmt) extends ExternalDeclaration
   case class GlobalDeclaration(decSpecs: DeclarationSpecifiers, declarators: List[InitDeclarator]) extends ExternalDeclaration
   case class PreprocessorInstruction (controlLine: ControlLine) extends ExternalDeclaration
   
@@ -165,7 +159,7 @@ trait CAbstractSyntax {
   
   
   //C Unary operators
-  sealed abstract class UnaryOp 
+  abstract class UnaryOp 
   case object Address extends UnaryOp //&
   case object Deref extends UnaryOp //*
   case object Positive extends UnaryOp //+
@@ -174,7 +168,7 @@ trait CAbstractSyntax {
   case object Negation extends UnaryOp //!
   
   //C Binary Operators
-  sealed abstract class BinaryOp
+  abstract class BinaryOp
   case object BinaryPlus extends BinaryOp
   case object BinaryMinus extends BinaryOp
   case object BinaryTimes extends BinaryOp
@@ -194,7 +188,7 @@ trait CAbstractSyntax {
   case object BinaryShiftLeft extends BinaryOp
   
   //C AssignmentOperators
-  sealed abstract class AssignmentOperator
+  abstract class AssignmentOperator
   case object Equals extends AssignmentOperator // =
   case object TimesEquals extends AssignmentOperator // *=
   case object DivisionEquals extends AssignmentOperator // /=
@@ -212,23 +206,23 @@ trait CAbstractSyntax {
   case class TypeSpecifierQualifier(typeSpecifier: TypeSpecifier, typeQualifier: TypeQualifier)
   
   //C Expressions
-  sealed abstract class Expression
+  abstract class Expression
   case class ConstantExpr (constantExpr: ConstantExpression) extends Expression
   case class Assign (assignTo: UnaryExpression, operator: AssignmentOperator, expr: Expression) extends Expression  //x=e  or  *p=e  or  a[e]=e 
   
-  sealed abstract class ConstantExpression
+  abstract class ConstantExpression
   case class GeneralExpr(otherExpression: GeneralExpression) extends ConstantExpression
   case class ConditionalExpression (expr1: GeneralExpression, expr2: Expression, expr3: ConstantExpression) extends ConstantExpression //e1 ? e2 : e3
   
-  sealed abstract class GeneralExpression
+  abstract class GeneralExpression
   case class CastExpr (castExpression: CastExpression) extends GeneralExpression
   case class BinaryPrim (operator: BinaryOp, expression1: Expression, expression2: Expression) extends GeneralExpression //Binary primitive operator
   
-  sealed abstract class CastExpression
+  abstract class CastExpression
   case class UnaryExpr(unaryExpr: UnaryExpression) extends CastExpression
   case class Cast(newType: TypeName, expression: CastExpression) extends CastExpression //(newType) expression;
   
-  sealed abstract class UnaryExpression
+  abstract class UnaryExpression
   case class UnaryPrim (operator: UnaryOp, expression: CastExpression) extends UnaryExpression //Unary primitive operator
   case class PrefixIncrement (expression: UnaryExpression) extends UnaryExpression
   case class PrefixDecrement (expression: UnaryExpression) extends UnaryExpression
@@ -236,7 +230,7 @@ trait CAbstractSyntax {
   case class SizeofTypeName (typeName: TypeName) extends UnaryExpression
   case class PostfixExpr (postfixExpr: PostfixExpression) extends UnaryExpression
   
-  sealed abstract class PostfixExpression
+  abstract class PostfixExpression
   case class PrimaryExpr (primaryExpression: PrimaryExpression) extends PostfixExpression
   case class PostfixIncrement (expression: PostfixExpression) extends PostfixExpression
   case class PostfixDecrement (expression: PostfixExpression) extends PostfixExpression
@@ -245,7 +239,7 @@ trait CAbstractSyntax {
   case class AccessMember (postfixExpr: PostfixExpression, memberToAccess: DeclareIdentifier) extends PostfixExpression //postfix-expression.identifier
   case class AccessArrowMember (postfixExpr: PostfixExpression, memberToAccess: DeclareIdentifier) extends PostfixExpression // postfix-expression->identifier
   
-  sealed abstract class PrimaryExpression
+  abstract class PrimaryExpression
   case class AccessIdentifier(name: String) extends PrimaryExpression
   case class ConstantInteger (contents: Integer) extends PrimaryExpression
   case class ConstantChar (contents: Character) extends PrimaryExpression

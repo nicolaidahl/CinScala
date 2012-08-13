@@ -67,7 +67,7 @@ trait CGenerator extends CAbstractSyntax {
 	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable)
 	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
-	      case function: FunctionDec => 
+	      case function: CFunctionDec => 
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
 	        val (varEnv1, funEnv2, str1) = generateExternalDeclarations(varEnv, funEnv1)(tail)
 	        (varEnv1, funEnv2, str + str1)
@@ -82,7 +82,7 @@ trait CGenerator extends CAbstractSyntax {
   /**
    * Generate a function declaration
    */
-  def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: FunctionDec): (FunEnv, String) = {
+  def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: CFunctionDec): (FunEnv, String) = {
     val (ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
     val returnType = functionDec.declarationSpecifiers match {
       case Some(ds) => ds.typeSpec
@@ -393,15 +393,6 @@ trait CGenerator extends CAbstractSyntax {
       }
     }
   }
-    
-  /*def generateType(t: TypeSpecifier, varEnv: VarEnv, funEnv: FunEnv): String = 
-    t match {
-      case TypeInteger => "int"
-      case TypeChar => "char"
-      case TypePointer(t) => generateType(t, varEnv, funEnv) + "*"
-      case TypeArray(t, None) => generateType(t, varEnv, funEnv) + "[]"
-      case TypeArray(t, Some(l)) => generateType(t, varEnv, funEnv) + "[" + l + "]"
-    }*/
   
   def generateUnaryOp(ope: UnaryOp): String =
     ope match {
@@ -451,7 +442,7 @@ trait CGenerator extends CAbstractSyntax {
     
   def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: TypeName): String = {
     val adStr = (for {ad <- tn.abstractDeclarator} yield generateAbstractDeclarator(varEnv, funEnv)(ad))
-    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + adStr.get
+    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + adStr.getOrElse("")
     
   }
   
@@ -467,13 +458,6 @@ trait CGenerator extends CAbstractSyntax {
       assignToStr + " " + opeStr + " " + exprStr
     case ConstantExpr(cstexpr) => generateConstantExpression(varEnv, funEnv)(cstexpr)
   }
-  
-  /*def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: Expression): String =
-    e match {
-      case Assign(access, expr) => 
-        generateAccess(access, varEnv, funEnv) + " = " + generateExpr(varEnv, funEnv)(expr)
-      
-    }*/
   
   def generateConstantExpression(varEnv: VarEnv, funEnv: FunEnv)(e: ConstantExpression): String =
     e match {
