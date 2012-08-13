@@ -63,8 +63,8 @@ trait CGenerator extends CAbstractSyntax {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
-	      case variable: CDeclaration =>
-	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable)
+	      case variable: GlobalDeclaration =>
+	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(variable.dec)
 	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + str1)
 	      case function: CFunctionDec => 
@@ -121,13 +121,17 @@ trait CGenerator extends CAbstractSyntax {
         case head :: tail => {
           val (varEnv1, str1) = generateInitDeclarator(varEnv, funEnv)(head)
           val (varEnv2, str2) = buildDeclarators(varEnv, funEnv)(tail)
-          (varEnv2, str1 + ", " + str2)
+          val comma = str2 match {
+            case "" => "" 
+            case _ => ", "
+          }
+          (varEnv2, str1 + comma + str2)
         }
       }
     
     val (varEnv1, str) = buildDeclarators(varEnv, funEnv)(dec.declarators)
     
-    (varEnv1, decSpecs + " " + str)
+    (varEnv1, decSpecs + " " + str + ";\n")
   }
   
   def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CInitDeclarator): (String, String) = {
@@ -147,19 +151,23 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {
-    dec.pointer match {
+  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
+    val ps = dec.pointer match {
+
       case Some(p) => {
-        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
-        (ident, "*" + str) //FIXME
+        generatePointer(p) + " "
       }
-      case None => generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator)
-    }  
+      case None => ""
+    }
+    
+    val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator) 
+    
+    (ident, ps + str) 
   }
   
-  def generatePointer(varEnv: VarEnv, funEnv: FunEnv)(point: CPointer): String = {
+  def generatePointer(point: CPointer): String = {
 	  val p = point.pointer match {
-	    case Some(pp) => generatePointer(varEnv, funEnv)(pp)
+	    case Some(pp) => generatePointer(pp)
 	    case None => ""
 	  }
 	  
@@ -204,13 +212,13 @@ trait CGenerator extends CAbstractSyntax {
   def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: CParameterDeclaration): String = {
     p match {
       case NormalDeclaration(decSpecs, dec) => {
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(dec)
+        val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
       case AbstractDeclaration(decSpecs, dec) => {
-        val (ident, str) = dec match {
+        val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
-          case None => ("", "")
+          case None => ""
         }
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
@@ -219,10 +227,10 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: CAbstractDeclarator): String = {
     a match {
-      case AbstractPointer(p) => generatePointer(varEnv, funEnv)(p)
+      case AbstractPointer(p) => generatePointer(p)
       case NormalDirectAbstractDeclarator(p, dec) => {
         val ps = p match {
-          case Some(p) => generatePointer(varEnv, funEnv)(p)
+          case Some(p) => generatePointer(p)
           case None => ""
         }
         
@@ -339,19 +347,23 @@ trait CGenerator extends CAbstractSyntax {
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
     sord match {
       case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
-      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration)
+      case Dec(declaration) => generateDeclaration(varEnv, funEnv)(declaration.dec)
     }
 
   
   def generateCompoundStmt(varEnv: VarEnv, funEnv: FunEnv)(stmts: List[CStmtOrDec]): String = {
-    stmts match {
-      case Nil => ""
-      case head :: tail => {
-        val (varEnv1, str1) = generateStmtOrDec(varEnv, funEnv)(head)
-        val str2 = generateCompoundStmt(varEnv1, funEnv)(tail)
-        str1 + "\n" + str2
+    def buildStmts(varEnv: VarEnv, funEnv:FunEnv)(stmts:List[CStmtOrDec]): String = {
+      stmts match {
+        case Nil => ""
+        case head :: tail => {
+          val (varEnv1, str1) = generateStmtOrDec(varEnv, funEnv)(head)
+          val str2 = buildStmts(varEnv1, funEnv)(tail)
+          str1 + "\n" + str2
+        }
       }
     }
+     
+    "{\n" + buildStmts(varEnv, funEnv)(stmts) + "\n}\n"
   }
   
   def generateSelectionStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CSelectionStatement): String = {
