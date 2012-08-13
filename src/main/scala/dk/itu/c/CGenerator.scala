@@ -47,7 +47,7 @@ trait CGenerator extends CAbstractSyntax {
   
     
   //Main generate function
-  def generate (prog: CProgram, varEnv: VarEnv, funEnv: FunEnv): String = {
+  def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
     generateExternalDeclarations(varEnv, funEnv)(prog.contents)._3
   }
   
