@@ -37,7 +37,7 @@ trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
         val (stdout, stderr1, exitCode1) = commandRunner.run("./" + fileName + ".o")
         stdout.mkString("\n")
       }
-      case _ => throw new IllegalArgumentException("Does not compile: \n" + stderr.mkString("\n"))
+      case _ => throw new IllegalArgumentException(program +  "\n Does not compile: \n" + stderr.mkString("\n"))
     } 
   }
 }
