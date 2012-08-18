@@ -301,27 +301,6 @@ trait CGenerator extends CAbstractSyntax {
   }
   
   
-  /*def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: Declaration): (String, VarEnv) =
-    dec match {
-    case LocalVariable(varType, identifier) => 
-      if(lookupVar(varEnv, identifier))
-        throw new VariableRedefinitionException("Variable " + identifier + " has already been defined")
-      else {
-        val varEnv1 = varEnv + (identifier -> varType)
-        val retString = generateType(varType, varEnv1, funEnv) + " " + identifier + ";"
-        (retString, varEnv1)
-      }
-    case LocalVariableWithAssign(varType, ident, expr) =>
-      if(lookupVar(varEnv, ident))
-        throw new VariableRedefinitionException("Variable " + ident + " has already been defined")
-      else {
-        val varEnv1 = varEnv + (ident -> varType)
-        val retString = generateType(varType, varEnv1, funEnv) + " " + ident + " = " + generateExpr(varEnv1, funEnv)(expr) + ";"
-        (retString, varEnv1)
-      }
-    }*/
-    
-  
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CStatement): String = {
     stmt match {

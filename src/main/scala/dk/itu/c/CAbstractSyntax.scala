@@ -33,7 +33,10 @@ trait CAbstractSyntax {
   //Function environment: Map from identifier to tuple of return type and argument list
   type FunEnv = Map[String, List[CDeclaration]]
   
-  case class Program (contents: List[CExternalDeclaration])
+  trait Program{
+    val contents: List[CExternalDeclaration]
+  }
+  case class CProgram (contents: List[CExternalDeclaration]) extends Program
   
   //Top level declaration
   abstract class CExternalDeclaration
@@ -208,7 +211,7 @@ trait CAbstractSyntax {
   abstract class CGeneralExpression extends CConstantExpression
   case class BinaryPrim (operator: CBinaryOp, expression1: CExpression, expression2: CExpression) extends CGeneralExpression //Binary primitive operator
   
-  abstract class CCastExpression extends CConstantExpression
+  abstract class CCastExpression extends CGeneralExpression
   case class Cast(newType: CTypeName, expression: CCastExpression) extends CCastExpression //(newType) expression;
   
   abstract class CUnaryExpression extends CCastExpression

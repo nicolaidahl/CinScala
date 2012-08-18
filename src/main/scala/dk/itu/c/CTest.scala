@@ -11,7 +11,7 @@ object Test extends CCompileAndRun with App {
   val mainBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(Call(AccessIdentifier("ab"), List()))))))
   val main = CFunctionDec(Some(CDeclarationSpecifiers(None, TypeInteger, None)), CDeclarator(None, ParameterList(DeclareIdentifier("main"), mainParams, false)), None, mainBody)
   
-  val ast = Program(List(globalDecs, ab, main))
+  val ast = CProgram(List(globalDecs, ab, main))
     
   println(compile(ast))
 }
