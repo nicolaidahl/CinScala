@@ -154,7 +154,6 @@ trait CGenerator extends CAbstractSyntax {
   
   def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
     val ps = dec.pointer match {
-
       case Some(p) => {
         generatePointer(p) + " "
       }
@@ -312,7 +311,7 @@ trait CGenerator extends CAbstractSyntax {
       
       //Labeled Statements
       case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
-      case CaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + "\n" + generateStmt(varEnv, funEnv)(s)
+      case CaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + ": " + generateStmt(varEnv, funEnv)(s)
       case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
       
       //Iteration Statements
@@ -327,12 +326,12 @@ trait CGenerator extends CAbstractSyntax {
         "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
         
       }
-      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ")\n"
+      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ");\n"
 
       //Selection Statements
-      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ")" + "{\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
-      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s1) + "}\n else {\n" + generateStmt(varEnv, funEnv)(s2) + "}\n"
-      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s) + "\n"
+      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s1) + "\nelse " + generateStmt(varEnv, funEnv)(s2) + "\n"
+      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s)
 
       //Jump Statements
       case Goto(i) => "goto " + i + ";"
@@ -343,7 +342,7 @@ trait CGenerator extends CAbstractSyntax {
           case Some(expr) => generateExpression(varEnv, funEnv)(expr)
           case None => ""
         }
-        "return " + es
+        "return " + es + ";"
       }
     }
   }
@@ -360,7 +359,7 @@ trait CGenerator extends CAbstractSyntax {
       }
     }
      
-    "{\n" + buildStmts(varEnv, funEnv)(stmts) + "\n}\n"
+    "{\n" + buildStmts(varEnv, funEnv)(stmts) + "}\n"
   }
   
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
@@ -454,7 +453,7 @@ trait CGenerator extends CAbstractSyntax {
     
       //Postfix Expressions
       case PostfixIncrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
-      case PostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
+      case PostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "--"
       case AccessIndex (postfixExpr, expr) => 
         generateExpression(varEnv,funEnv)(postfixExpr) + "[" + generateExpression(varEnv, funEnv)(expr) + "]"
       case Call (postfixExpression, arguments) => 
@@ -472,7 +471,7 @@ trait CGenerator extends CAbstractSyntax {
       case ConstantChar (contents) => contents.toString()
       case ConstantFloat (contents) => contents.toString()
       case ConstantEnumeration => "" //TODO find out what this is
-      case CharArray (content) => content
+      case CharArray (content) => "\"" + content + "\""
       case ParenthesiseExpr(content) => generateExpression(varEnv, funEnv)(content)
       case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
     }
