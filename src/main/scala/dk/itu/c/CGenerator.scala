@@ -155,7 +155,7 @@ trait CGenerator extends CAbstractSyntax {
   def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
     val ps = dec.pointer match {
       case Some(p) => {
-        generatePointer(p) + " "
+        generatePointer(p)
       }
       case None => ""
     }
@@ -172,11 +172,11 @@ trait CGenerator extends CAbstractSyntax {
 	  }
 	  
 	  val q = point.typeQualifier match {
-	    case Some(qs) => qs.mkString(" ")
+	    case Some(qs) => qs.mkString("", " ", " ")
 	    case None => ""
 	  }
 	  
-	  "*" + q.mkString("", " ", " ") + p
+	  "*" + q + p
   }
   
   def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDirectDeclarator): (String, String) = {
@@ -438,12 +438,22 @@ trait CGenerator extends CAbstractSyntax {
     
   def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: CTypeName): String = {
     val adStr = (for {ad <- tn.abstractDeclarator} yield generateAbstractDeclarator(varEnv, funEnv)(ad))
-    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + " " + adStr.getOrElse("")
+    val a = adStr match {
+      case Some(a) => " " + a
+      case None => ""
+    }
+    generateTypeSpecifierQualifier(varEnv, funEnv)(tn.qualifierSpecifierList) + a
     
   }
   
-  def generateTypeSpecifierQualifier(varEnv: VarEnv, funEnv: FunEnv)(tsq: CTypeSpecifierQualifier): String =
-    generateTypeQualifier(tsq.typeQualifier) + " " + generateTypeSpecifier(tsq.typeSpecifier)
+  def generateTypeSpecifierQualifier(varEnv: VarEnv, funEnv: FunEnv)(tsq: CTypeSpecifierQualifier): String = {
+    val tq = tsq match {
+      case CTypeSpecifierQualifier(ts, Some(tq)) => generateTypeQualifier(tq) + " "
+      case CTypeSpecifierQualifier(ts, None) => ""
+    }
+    
+    tq + generateTypeSpecifier(tsq.typeSpecifier)
+  }
   
   def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
     e match {
