@@ -489,7 +489,7 @@ trait CGenerator extends CAbstractSyntax {
 	  //Primary Expressions
       case AccessIdentifier(name) => name
       case ConstantInteger(contents) => contents.toString()
-      case ConstantChar (contents) => contents.toString()
+      case ConstantChar (contents) => "'" + contents.toString() + "'"
       case ConstantFloat (contents) => contents.toString()
       case ConstantEnumeration => "" //TODO find out what this is
       case CharArray (content) => "\"" + content + "\""
