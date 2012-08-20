@@ -117,6 +117,18 @@ object ArrayTest extends Test {
   println(test)
 }
 
+object PointerTest extends Test {
+  val p = LocalDeclaration(CDeclarationSpecifiers(None, TypeChar, None), List(DeclaratorWrap(CDeclarator(Some(CPointer(None, None)), DeclareIdentifier("p")))))
+  val malloc = Call(AccessIdentifier("malloc"), List(SizeofTypeName(CTypeName(CTypeSpecifierQualifier(TypeChar, None), None))))
+  val assign = Stmt(ExpressionStmt(Some(Assign(AccessIdentifier("p"), Equals, Cast(CTypeName(CTypeSpecifierQualifier(TypeChar, None), Some(AbstractPointer(CPointer(None, None)))), malloc)))))
+  val mainBody = CompoundStmt(List(p, assign))
+  val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdlib.h")), generateMain(mainBody)))
+
+  def test = compileAndRun(ast)
+  
+  println(test)
+}
+
 /*
 object Test extends CCompileAndRun with App {
   
