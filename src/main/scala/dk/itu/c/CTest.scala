@@ -105,6 +105,18 @@ object ForTest extends Test {
   println(test)
 }
 
+object ArrayTest extends Test {
+  val a = LocalDeclaration(CDeclarationSpecifiers(None, TypeChar, None), List(DeclaratorWrap(CDeclarator(None, DeclareArray(DeclareIdentifier("a"), Some(ConstantInteger(10)))))))
+  val assign = Stmt(ExpressionStmt(Some(Assign(AccessIndex(AccessIdentifier("a"), ConstantInteger(0)), Equals, ConstantChar('Y')))))
+  val print = Stmt(ExpressionStmt(Some(Call(AccessIdentifier("printf"), List(CharArray("%c\\n"), AccessIndex(AccessIdentifier("a"), ConstantInteger(0)))))))
+  val mainBody = CompoundStmt(List(a, assign, print))
+  val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdio.h")), generateMain(mainBody)))
+  
+  def test = compileAndRun(ast)
+  
+  println(test)
+}
+
 /*
 object Test extends CCompileAndRun with App {
   
