@@ -67,15 +67,15 @@ trait CGenerator extends CAbstractSyntax {
 	      case GlobalDeclaration(decSpecs, declarators) =>
 	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
 	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
-	        (varEnv2, funEnv1, str + str1)
+	        (varEnv2, funEnv1, str + "\n\n" + str1)
 	      case function: CFunctionDec => 
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
 	        val (varEnv1, funEnv2, str1) = generateExternalDeclarations(varEnv, funEnv1)(tail)
-	        (varEnv1, funEnv2, str + str1)
+	        (varEnv1, funEnv2, str + "\n" + str1)
 	      case PreprocessorInstruction(precompInstr) =>
 	        val result = generateControlLine(precompInstr, varEnv, funEnv)
 	        val (varEnv1, funEnv1, str1) = generateExternalDeclarations(varEnv, funEnv)(tail)
-	        (varEnv1, funEnv1, result + str1)
+	        (varEnv1, funEnv1, result + "\n" + str1)
 	    }
 	    
 	}
@@ -132,7 +132,7 @@ trait CGenerator extends CAbstractSyntax {
     
     val (varEnv1, str) = buildDeclarators(varEnv, funEnv)(dec.declarators)
     
-    (varEnv1, decSpecs + " " + str + ";\n")
+    (varEnv1, decSpecs + " " + str + ";")
   }
   
   def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CInitDeclarator): (String, String) = {
