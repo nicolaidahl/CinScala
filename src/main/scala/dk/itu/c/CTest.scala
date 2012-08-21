@@ -18,12 +18,12 @@ object MainFunctionTest extends Test {
   val abBody = CompoundStmt(List(Stmt(Return(Some(BinaryPrim(BinaryPlus, AccessIdentifier("a"), AccessIdentifier("b")))))))
   val ab = generateFunction(CDeclarationSpecifiers(None, TypeInteger, None), "ab", List(), abBody)
   
-  val mainBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(Call(AccessIdentifier("printf"), List(CharArray("\"%d\""), Call(AccessIdentifier("ab"), List())))))), Stmt(Return(Some(ConstantInteger(0))))))
+  val mainBody = CompoundStmt(List(Stmt(ExpressionStmt(Some(Call(AccessIdentifier("printf"), List(CharArray("%d"), Call(AccessIdentifier("ab"), List())))))), Stmt(Return(Some(ConstantInteger(0))))))
   val main = generateMain(mainBody)
   
   val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdio.h")), globalDecs, ab, main))
   
-  def test = compile(ast)
+  def test = compileAndRun(ast)
     
   println(test)
 }
@@ -119,9 +119,12 @@ object ArrayTest extends Test {
 
 object PointerTest extends Test {
   val p = LocalDeclaration(CDeclarationSpecifiers(None, TypeChar, None), List(DeclaratorWrap(CDeclarator(Some(CPointer(None, None)), DeclareIdentifier("p")))))
+  val pp = LocalDeclaration(CDeclarationSpecifiers(None, TypeChar, None), List(DeclaratorWrap(CDeclarator(Some(CPointer(Some(CPointer(None, None)), None)), DeclareIdentifier("pp")))))
   val malloc = Call(AccessIdentifier("malloc"), List(SizeofTypeName(CTypeName(CTypeSpecifierQualifier(TypeChar, None), None))))
-  val assign = Stmt(ExpressionStmt(Some(Assign(AccessIdentifier("p"), Equals, Cast(CTypeName(CTypeSpecifierQualifier(TypeChar, None), Some(AbstractPointer(CPointer(None, None)))), malloc)))))
-  val mainBody = CompoundStmt(List(p, assign))
+  val assignP = Stmt(ExpressionStmt(Some(Assign(AccessIdentifier("p"), Equals, Cast(CTypeName(CTypeSpecifierQualifier(TypeChar, None), Some(AbstractPointer(CPointer(None, None)))), malloc)))))
+  val assignPP = Stmt(ExpressionStmt(Some(Assign(AccessIdentifier("pp"), Equals, UnaryPrim(Address, AccessIdentifier("p"))))))
+  val assignPP2 = Stmt(ExpressionStmt(Some(Assign(UnaryPrim(Deref, AccessIdentifier("pp")), Equals, AccessIdentifier("p")))))
+  val mainBody = CompoundStmt(List(p, pp, assignP, assignPP, assignPP2))
   val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdlib.h")), generateMain(mainBody)))
 
   def test = compileAndRun(ast)
