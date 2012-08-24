@@ -132,6 +132,22 @@ object PointerTest extends Test {
   println(test)
 }
 
+object StorageTest extends Test {
+  val auto = LocalDeclaration(CDeclarationSpecifiers(Some(Auto), TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("a")))))
+  val register = LocalDeclaration(CDeclarationSpecifiers(Some(Register), TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("r")))))
+  val static = LocalDeclaration(CDeclarationSpecifiers(Some(Static), TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("s")))))
+  val extern = LocalDeclaration(CDeclarationSpecifiers(Some(Extern), TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("e")))))
+  val typedef = LocalDeclaration(CDeclarationSpecifiers(Some(Typedef), TypeInteger, None), List(DeclaratorWrap(CDeclarator(None, DeclareIdentifier("t")))))
+  
+  val mainBody = CompoundStmt(List(auto, register, static, extern, typedef))
+  
+  val ast = Program(List(PreprocessorInstruction(IncludeGlobal("stdlib.h")), generateMain(mainBody)))
+  
+  def test = compileAndRun(ast)
+  
+  println(test)
+}
+
 /*
 object Test extends CCompileAndRun with App {
   
