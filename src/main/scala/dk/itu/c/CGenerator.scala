@@ -26,15 +26,14 @@ furnished to do so, subject to the following conditions:
 
 package dk.itu.c
 import scala.collection.mutable.HashMap
-import scala.dbc.syntax.StatementExpression
-import com.sun.source.tree.LabeledStatementTree
+import CAbstractSyntax._
 
-trait CGenerator extends CAbstractSyntax {
+trait CGenerator {
   
   def getEmptyVarEnv: Map[String, CTypeSpecifier] = Map.empty[String, CTypeSpecifier]
   def getEmptyFunEnv: Map[String, List[CDeclaration]] = Map.empty[String, List[CDeclaration]]
   
-  case class CASTException(smth:String) extends Exception(smth)
+  class CASTException(val smth:String) extends Exception(smth)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
   case class VariableRedefinitionException(smth1:String) extends CASTException(smth1)
   case class FunctionRedefinitionException(smth1: String) extends CASTException(smth1)
@@ -152,7 +151,7 @@ trait CGenerator extends CAbstractSyntax {
     }
   }
   
-  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
+  /*def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
     val ps = dec.pointer match {
       case Some(p) => {
         generatePointer(p) + " "
@@ -163,7 +162,7 @@ trait CGenerator extends CAbstractSyntax {
     val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator) 
     
     (ident, ps + str) 
-  }
+  }*/
   
   def generatePointer(point: CPointer): String = {
 	  val p = point.pointer match {
@@ -179,8 +178,11 @@ trait CGenerator extends CAbstractSyntax {
 	  "*" + q.mkString("", " ", " ") + p
   }
   
-  def generateDirectDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDirectDeclarator): (String, String) = {
+  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {
     dec match {
+      case PointerDeclarator(pointer, declarator) => 
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
+        (ident, generatePointer(pointer) + str)
       case DeclareIdentifier(name) => (name, name)
       case ParenthesiseDeclarator(declarator) => 
         val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
@@ -190,16 +192,20 @@ trait CGenerator extends CAbstractSyntax {
     	  case Some(e) => generateExpression(varEnv, funEnv)(e)
     	  case None => ""
     	}
-    	val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dirDecl)
+    	val (ident, str) = generateDeclarator(varEnv, funEnv)(dirDecl)
     	(ident, str + "[" + exprVal + "]")
       }
-      case ParameterList(d, p, e) => {
-        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
+      case ParameterList(d, p) => {
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
         (ident, str + "(" + ps + ")")
       } 
+      case ParameterListWithEllipsis(d, p) =>
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
+        (ident, str + "(" + ps + ", ...)")
       case IdentifierList(d, i) => {
-        val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(d)
+        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val is = i match {
           case Some(ii) => ii.mkString(", ")
           case None => ""
@@ -215,6 +221,9 @@ trait CGenerator extends CAbstractSyntax {
         val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
+      case NormalDeclarationSimple(typeSpec, dec) =>
+        val str = generateDeclarator(varEnv, funEnv)(dec)._2
+        generateTypeSpecifier(typeSpec) + " " + str
       case AbstractDeclaration(decSpecs, dec) => {
         val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
@@ -461,9 +470,9 @@ trait CGenerator extends CAbstractSyntax {
         //  printf("Warning: Function " + identifier + " is unknown.\n\n")
         generateExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
       case AccessMember (postfixExpr, memberToAccess) => 
-        generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDirectDeclarator(varEnv, funEnv)(memberToAccess) 
+        generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDeclarator(varEnv, funEnv)(memberToAccess) 
       case AccessArrowMember (postfixExpr, memberToAccess) =>
-        generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDirectDeclarator(varEnv, funEnv)(memberToAccess)
+        generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDeclarator(varEnv, funEnv)(memberToAccess)
     
 	  //Primary Expressions
       case AccessIdentifier(name) => name

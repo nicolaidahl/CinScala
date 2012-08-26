@@ -1,8 +1,12 @@
-name := "Scala C"
+name := "cinscala"
 
-version := "0.01"
+organization := "dk.itu"
+
+version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.9.2"
+
+scalacOptions += "-deprecation"
 
 resolvers ++= Seq(
   "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
@@ -14,3 +18,4 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.9" % "test"
   //"org.scalaz" %% "scalaz-core" % "7.0-SNAPSHOT"
 )
+

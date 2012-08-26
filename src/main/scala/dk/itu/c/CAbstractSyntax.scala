@@ -26,7 +26,7 @@ furnished to do so, subject to the following conditions:
 
 package dk.itu.c
 
-trait CAbstractSyntax {
+object CAbstractSyntax {
   
   //Variable environment: Map from identifier to variable type
   type VarEnv = Map[String, CTypeSpecifier] 
@@ -64,19 +64,20 @@ trait CAbstractSyntax {
   case class ExpressionInitializer (expr: CExpression) extends CInitializer
   case class Scalar (initializers: List[CInitializer]) extends CInitializer //{ initializer-list }
   
-  case class CDeclarator(pointer: Option[CPointer], directDeclarator: CDirectDeclarator)
-  
-  sealed abstract class CDirectDeclarator
-  case class DeclareIdentifier(name: String) extends CDirectDeclarator
-  case class ParenthesiseDeclarator(declarator: CDeclarator) extends CDirectDeclarator //(declarator)
-  case class DeclareArray(directDeclarator: CDirectDeclarator, expr: Option[CExpression]) extends CDirectDeclarator //direct-declarator [ constant-expressionopt ]
-  case class ParameterList(directDeclarator: CDirectDeclarator, paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectDeclarator //direct-declarator ( param1, param2, ... ) 
-  case class IdentifierList(directDeclarator: CDirectDeclarator, identifierList: Option[List[String]]) extends CDirectDeclarator //direct-declarator ( identifier-list_opt )
+  sealed abstract class CDeclarator
+  case class PointerDeclarator(pointer: CPointer, declarator: CDeclarator) extends CDeclarator
+  case class DeclareIdentifier(name: String) extends CDeclarator
+  case class ParenthesiseDeclarator(declarator: CDeclarator) extends CDeclarator //(declarator)
+  case class DeclareArray(directDeclarator: CDeclarator, expr: Option[CExpression]) extends CDeclarator //direct-declarator [ constant-expressionopt ]
+  case class ParameterList(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2 ) 
+  case class ParameterListWithEllipsis(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2, ... )
+  case class IdentifierList(directDeclarator: CDeclarator, identifierList: Option[List[String]]) extends CDeclarator //direct-declarator ( identifier-list_opt )
   
   case class CPointer(pointer: Option[CPointer], typeQualifier: Option[List[CTypeQualifier]]) //*type-qualifier-list_opt pointer_opt
   
   sealed abstract class CParameterDeclaration
   case class NormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
+  case class NormalDeclarationSimple(typeSpec: CTypeSpecifier, declarator: CDeclarator) extends CParameterDeclaration
   case class AbstractDeclaration(decSpec: CDeclarationSpecifiers, abstractDeclarator: Option[CAbstractDeclarator]) extends CParameterDeclaration
   
   sealed abstract class CAbstractDeclarator
@@ -231,8 +232,8 @@ trait CAbstractSyntax {
   
   abstract class CPrimaryExpression extends CPostfixExpression
   case class AccessIdentifier(name: String) extends CPrimaryExpression
-  case class ConstantInteger (contents: Integer) extends CPrimaryExpression
-  case class ConstantChar (contents: Character) extends CPrimaryExpression
+  case class ConstantInteger (contents: Int) extends CPrimaryExpression
+  case class ConstantChar (contents: Char) extends CPrimaryExpression
   case class ConstantFloat (contents: Float) extends CPrimaryExpression
   case object ConstantEnumeration extends CPrimaryExpression //TODO find out what this is
   case class CharArray (content: String) extends CPrimaryExpression

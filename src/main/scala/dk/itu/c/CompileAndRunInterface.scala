@@ -1,9 +1,7 @@
 package dk.itu.c
 
-
 trait CompileAndRunInterface {
-  this: CAbstractSyntax =>
-  
+  type Program
   type Prog
   type Result
   
@@ -18,7 +16,9 @@ trait CompileAndRunInterface {
 
 
 trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
+  import CAbstractSyntax._
   
+  type Program = CProgram
   type Prog = String
   type Result = String
   
@@ -45,7 +45,9 @@ trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
 
 
 object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
-
+  import CUDAAbstractSyntax._
+  
+  type Program = CUDAProgram
   type Prog = String
   type Result = String
   

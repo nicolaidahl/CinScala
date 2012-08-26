@@ -1,10 +1,11 @@
 package dk.itu.c
+import CAbstractSyntax._
 
-trait TestFunctions extends CAbstractSyntax {  
-  val mainParams = List(NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), CDeclarator(None, DeclareIdentifier("argc"))), NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, Some(Const)), CDeclarator(Some(CPointer(None, None)), DeclareArray(DeclareIdentifier("argv"), None))))
+trait TestFunctions {  
+  val mainParams = List(NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), DeclareIdentifier("argc")), NormalDeclaration(CDeclarationSpecifiers(None, TypeInteger, Some(Const)), PointerDeclarator(CPointer(None, None), DeclareArray(DeclareIdentifier("argv"), None))))
   
-  def generateLocalDeclaration(t: CDeclarationSpecifiers, i: String, v: CPrimaryExpression) = LocalDeclaration(t, List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier(i)), ExpressionInitializer(v))))
-  def generateFunction(returnType: CDeclarationSpecifiers, name: String, params: List[CParameterDeclaration], body: CompoundStmt) = CFunctionDec(Some(returnType), CDeclarator(None, ParameterList(DeclareIdentifier(name), params, false)), None, body)
+  def generateLocalDeclaration(t: CDeclarationSpecifiers, i: String, v: CPrimaryExpression) = LocalDeclaration(t, List(DeclaratorWithAssign(DeclareIdentifier(i), ExpressionInitializer(v))))
+  def generateFunction(returnType: CDeclarationSpecifiers, name: String, params: List[CParameterDeclaration], body: CompoundStmt) = CFunctionDec(Some(returnType), ParameterList(DeclareIdentifier(name), params), None, body)
   def generateMain(body: CompoundStmt) = generateFunction(CDeclarationSpecifiers(None, TypeInteger, None), "main", mainParams, body)
 }
 
@@ -13,7 +14,7 @@ trait Test extends App with CCompileAndRun with TestFunctions {
 }
 
 object MainFunctionTest extends Test {
-  val globalDecs = GlobalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("a")), ExpressionInitializer(ConstantInteger(0))), DeclaratorWithAssign(CDeclarator(None, DeclareIdentifier("b")), ExpressionInitializer(ConstantInteger(1))))) 
+  val globalDecs = GlobalDeclaration(CDeclarationSpecifiers(None, TypeInteger, None), List(DeclaratorWithAssign(DeclareIdentifier("a"), ExpressionInitializer(ConstantInteger(0))), DeclaratorWithAssign(DeclareIdentifier("b"), ExpressionInitializer(ConstantInteger(1))))) 
   
   val abBody = CompoundStmt(List(Stmt(Return(Some(BinaryPrim(BinaryPlus, AccessIdentifier("a"), AccessIdentifier("b")))))))
   val ab = generateFunction(CDeclarationSpecifiers(None, TypeInteger, None), "ab", List(), abBody)

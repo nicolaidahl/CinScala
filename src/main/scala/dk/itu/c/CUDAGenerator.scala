@@ -1,8 +1,9 @@
 package dk.itu.c
+import CAbstractSyntax._
+import CUDAAbstractSyntax._
 
-trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
 
-  
+trait CUDAGenerator extends CGenerator {
   
   override def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
     generateExternalDeclarations(varEnv, funEnv)(prog.contents)._3
@@ -28,18 +29,18 @@ trait CUDAGenerator extends CGenerator with CUDAAbstractSyntax {
   
   def generateCUDAFunctionQualifier(funcType: CUDAFunctionQualifier): String =
     funcType match {
-      case CUDAGlobalQualifier() => "__global__"
-      case CUDADeviceFuncQualifier() => "__device__"
-      case CUDAHostQualifier() => "__host__"
-      case CUDANoInlineQualifier() => "__noinline__"
-      case CUDAForceInlineQualifier() => "__forceinline__"
+      case CUDAGlobalQualifier => "__global__"
+      case CUDADeviceFuncQualifier => "__device__"
+      case CUDAHostQualifier => "__host__"
+      case CUDANoInlineQualifier => "__noinline__"
+      case CUDAForceInlineQualifier => "__forceinline__"
     }
   
   def generateCUDAVariableQualifier(varType: CUDAVariableQualifier): String =
     varType match {
-      case CUDADeviceVarQualifier() => "__device__"
-      case CUDAConstantQualifier() => "__constant__"
-      case CUDASharedQualifier() => "__shared__"
+      case CUDADeviceVarQualifier => "__device__"
+      case CUDAConstantQualifier => "__constant__"
+      case CUDASharedQualifier => "__shared__"
     }
   
   override def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
