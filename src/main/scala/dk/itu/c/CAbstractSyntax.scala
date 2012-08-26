@@ -200,7 +200,7 @@ object CAbstractSyntax {
     
   //TypeName
   case class CTypeName(qualifierSpecifierList: CTypeSpecifierQualifier, abstractDeclarator: Option[CAbstractDeclarator])
-  case class CTypeSpecifierQualifier(typeSpecifier: CTypeSpecifier, typeQualifier: CTypeQualifier)
+  case class CTypeSpecifierQualifier(typeSpecifier: CTypeSpecifier, typeQualifier: Option[CTypeQualifier])
   
   //C Expressions
   abstract class CExpression
