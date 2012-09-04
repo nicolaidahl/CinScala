@@ -144,12 +144,17 @@ object CAbstractSyntax {
   case object TypeDouble extends CTypeSpecifier
   case object TypeSigned extends CTypeSpecifier
   case object TypeUnsigned extends CTypeSpecifier
-  case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
+  case class  TypeStruct(ident: Option[String]) extends CTypeSpecifier
+  case class  TypeUnion(ident: Option[String]) extends CTypeSpecifier
+  case class  TypeEnum(ident: Option[String]) extends CTypeSpecifier
+  
+  
+  /*case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
   case class  TypeStructShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
   case class  TypeUnion(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
   case class  TypeUnionShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
   case class  TypeEnum(ident: Option[String], enumerations: List[CEnumerationDec]) extends CTypeSpecifier
-  case class  TypeEnumShort(ident: String, enumerations: Option[List[CEnumerationDec]]) extends CTypeSpecifier
+  case class  TypeEnumShort(ident: String, enumerations: Option[List[CEnumerationDec]]) extends CTypeSpecifier*/
   
   case class CStructUnionDeclaration(typeQualifier: CTypeQualifier, typeSpecifier: CTypeSpecifier, declarator: List[CDeclarator]) //const int foo = 2, bar;
   

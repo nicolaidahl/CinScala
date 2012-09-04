@@ -298,6 +298,9 @@ trait CGenerator {
       case TypeDouble => "double"
       case TypeSigned => "signed"
       case TypeUnsigned => "unsigned"
+      case TypeStruct(name) => name.getOrElse("")
+      case TypeEnum(name) => name.getOrElse("")
+      case TypeUnion(name) => name.getOrElse("")
     }
   }
   
