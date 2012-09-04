@@ -50,9 +50,8 @@ object CAbstractSyntax {
   case class IncludeGlobal (fileName: String) extends CControlLine
   
   //Declaration specifier
-  case class CDeclarationSpecifiers(storage: Option[CStorageClassSpecifier], typeSpec: CTypeSpecifier, qualifier: Option[CTypeQualifier])
+  case class CDeclarationSpecifiers(decSpecs: List[CDeclarationSpecifierUnit])
 
-  //Any declaration
   case class CDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator])
 
   //Init Declarator (wrapper for Declarator allowing assignment)
@@ -89,8 +88,11 @@ object CAbstractSyntax {
   case class ArrayAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], expr: CConstantExpression) extends CDirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
   case class FunctionAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
   
+  //Storage, type qualifier & type speficier
+  sealed abstract class CDeclarationSpecifierUnit
+  
   //Storage class
-  sealed abstract class CStorageClassSpecifier
+  sealed abstract class CStorageClassSpecifier extends CDeclarationSpecifierUnit
   case object Auto extends CStorageClassSpecifier
   case object Register extends CStorageClassSpecifier
   case object Static extends CStorageClassSpecifier
@@ -98,7 +100,7 @@ object CAbstractSyntax {
   case object Typedef extends CStorageClassSpecifier
 
   //Type qualifier
-  sealed abstract class CTypeQualifier
+  sealed abstract class CTypeQualifier extends CDeclarationSpecifierUnit
   case object Const extends CTypeQualifier
   case object Volatile extends CTypeQualifier
   
@@ -134,7 +136,7 @@ object CAbstractSyntax {
   case class LocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
   
   //C types
-  sealed abstract class CTypeSpecifier
+  sealed abstract class CTypeSpecifier extends CDeclarationSpecifierUnit
   case object TypeVoid extends CTypeSpecifier
   case object TypeChar extends CTypeSpecifier
   case object TypeShort extends CTypeSpecifier

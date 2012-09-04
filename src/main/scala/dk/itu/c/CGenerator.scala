@@ -84,10 +84,10 @@ trait CGenerator {
    */
   def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: CFunctionDec): (FunEnv, String) = {
     val (ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
-    val returnType = functionDec.declarationSpecifiers match {
+    /*val returnType = functionDec.declarationSpecifiers match {
       case Some(ds) => ds.typeSpec
       case None => TypeInteger
-    }
+    }*/
     val parameters = functionDec.declarationList match { //FIXME
       case Some(p) => p
       case None => List()
@@ -106,10 +106,17 @@ trait CGenerator {
 
   
   def generateDeclarationSpecifiers(dec: CDeclarationSpecifiers): String = {
-    val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st) + " "
+    val decs = dec.decSpecs.map(spec => spec match {
+      case st: CStorageClassSpecifier => generateStorageClassSpecifier(st)
+      case q: CTypeQualifier => generateTypeQualifier(q)
+      case t: CTypeSpecifier => generateTypeSpecifier(t)
+    })
+    
+    /*val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st) + " "
     val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q) + " "
     
-    storage.getOrElse("") + qualifier.getOrElse("") + generateTypeSpecifier(dec.typeSpec)
+    storage.getOrElse("") + qualifier.getOrElse("") + generateTypeSpecifier(dec.typeSpec)*/
+    decs.mkString("", " ", " ")
   }
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclaration): (VarEnv, String) = {
