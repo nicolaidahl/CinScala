@@ -116,7 +116,7 @@ trait CGenerator {
     val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q) + " "
     
     storage.getOrElse("") + qualifier.getOrElse("") + generateTypeSpecifier(dec.typeSpec)*/
-    decs.mkString("", " ", " ")
+    decs.mkString(" ")
   }
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclaration): (VarEnv, String) = {
