@@ -490,9 +490,9 @@ trait CGenerator {
         //  printf("Warning: Function " + identifier + " is unknown.\n\n")
         generateExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
       case AccessMember (postfixExpr, memberToAccess) => 
-        generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDeclarator(varEnv, funEnv)(memberToAccess) 
+        generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
       case AccessArrowMember (postfixExpr, memberToAccess) =>
-        generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDeclarator(varEnv, funEnv)(memberToAccess)
+        generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
     
 	  //Primary Expressions
       case AccessIdentifier(name) => name
@@ -501,7 +501,7 @@ trait CGenerator {
       case ConstantFloat (contents) => contents.toString()
       case ConstantEnumeration => "" //TODO find out what this is
       case CharArray (content) => "\"" + content + "\""
-      case ParenthesiseExpr(content) => generateExpression(varEnv, funEnv)(content)
+      case ParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"
       case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
     }
   
