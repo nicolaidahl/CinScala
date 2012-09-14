@@ -498,7 +498,11 @@ trait CGenerator {
       case AccessIdentifier(name) => name
       case ConstantInteger(contents) => contents.toString()
       case ConstantChar (contents) => "'" + contents.toString() + "'"
-      case ConstantFloat (contents) => contents.toString()
+      case ConstantFloat (contents) => {
+        // Set det locale to English, so commas in floats are written as "."
+ 	    java.util.Locale.setDefault(java.util.Locale.ENGLISH)
+ 	    "%.6f".format(contents) + "f"
+      }
       case ConstantEnumeration => "" //TODO find out what this is
       case CharArray (content) => "\"" + content + "\""
       case ParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"

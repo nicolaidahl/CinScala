@@ -14,7 +14,7 @@ trait Test extends App with CCompileAndRun with TestFunctions {
 }
 
 object MainFunctionTest extends Test {
-  val globalDecs = GlobalDeclaration(CDeclarationSpecifiers(List(TypeInteger)), List(DeclaratorWithAssign(DeclareIdentifier("a"), ExpressionInitializer(ConstantInteger(0))), DeclaratorWithAssign(DeclareIdentifier("b"), ExpressionInitializer(ConstantInteger(1))))) 
+  val globalDecs = GlobalDeclaration(CDeclarationSpecifiers(List(TypeFloat)), List(DeclaratorWithAssign(DeclareIdentifier("a"), ExpressionInitializer(ConstantFloat(0))), DeclaratorWithAssign(DeclareIdentifier("b"), ExpressionInitializer(ConstantInteger(1))))) 
   
   val abBody = CompoundStmt(List(Stmt(Return(Some(BinaryPrim(BinaryPlus, AccessIdentifier("a"), AccessIdentifier("b")))))))
   val ab = generateFunction(CDeclarationSpecifiers(List(TypeInteger)), "ab", List(), abBody)
@@ -24,7 +24,7 @@ object MainFunctionTest extends Test {
   
   val ast = CProgram(List(PreprocessorInstruction(IncludeGlobal("stdio.h")), globalDecs, ab, main))
   
-  def test = compileAndRun(ast)
+  def test = compile(ast)
     
   println(test)
 }
