@@ -14,9 +14,9 @@ trait CUDAGenerator extends CGenerator {
       case Nil => (varEnv, funEnv, "")
       case head :: tail =>
         head match {
-          case CUDAFunctionDec(functionType, typeSpecifier, declarator, declarationList, compoundStmt) => 
+          case CUDAFunctionDec(functionType, decSpecifiers, declarator, declarationList, compoundStmt) => 
             val functionTypeStr = generateCUDAFunctionQualifier(functionType)
-            val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, CFunctionDec(Some(CDeclarationSpecifiers(List(typeSpecifier))), declarator, declarationList, compoundStmt))
+            val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, CFunctionDec(decSpecifiers, declarator, declarationList, compoundStmt))
             val (varEnv1, funEnv2, str1) = generateExternalDeclarations(varEnv, funEnv1)(tail)
             
             (varEnv1, funEnv2, functionTypeStr + " " + str + str1)
