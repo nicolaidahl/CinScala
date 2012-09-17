@@ -334,7 +334,7 @@ trait CGenerator {
       case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
       
       //Iteration Statements
-      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}\n"
+      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") \n" + generateStmt(varEnv, funEnv)(s)
       case For(i, e, c, s) => {
         val ss = List(i, e, c).map({
           case expr => expr match {
@@ -342,7 +342,7 @@ trait CGenerator {
             case None => ""
           }
         })
-        "for(" + ss.mkString("; ") + ") {\n" + generateStmt(varEnv, funEnv)(s) + "}"
+        "for(" + ss.mkString("; ") + ") \n" + generateStmt(varEnv, funEnv)(s)
         
       }
       case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ");\n"
