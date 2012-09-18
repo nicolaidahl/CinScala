@@ -383,7 +383,7 @@ trait CGenerator {
   
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
     sord match {
-      case CStmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
+      case stmt: CStatement => (varEnv, generateStmt(varEnv, funEnv)(stmt))
       case CLocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
     }
 

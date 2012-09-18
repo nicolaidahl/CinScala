@@ -54,6 +54,11 @@ object CAbstractSyntax {
   object CDeclarationSpecifiers {
     def apply(decSpecs: CDeclarationSpecifierUnit*): CDeclarationSpecifiers = this.apply(decSpecs.toList)
   }
+  
+  //Statements or declarations
+  sealed abstract class CStmtOrDec
+  sealed abstract class CStatement extends CStmtOrDec
+  case class CLocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
 
   case class CDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator])
 
@@ -108,7 +113,7 @@ object CAbstractSyntax {
   case object CVolatile extends CTypeQualifier
   
   //C statements
-  sealed abstract class CStatement extends CStmtOrDec
+
   case class CExpressionStmt(expr: Option[CExpression]) extends CStatement
   object CExpressionStmt {
     def apply(): CExpressionStmt = CExpressionStmt(None)
@@ -143,11 +148,6 @@ object CAbstractSyntax {
     def apply(): CReturn = CReturn(None)
     def apply(expr: CExpression): CReturn = CReturn(Some(expr))
   }
-  
-  //Statements or declarations
-  sealed abstract class CStmtOrDec
-  case class CStmt (statement: CStatement) extends CStmtOrDec
-  case class CLocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
   
   //C types
   sealed abstract class CTypeSpecifier extends CDeclarationSpecifierUnit

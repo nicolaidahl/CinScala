@@ -16,10 +16,10 @@ trait Test extends App with CCompileAndRun with TestFunctions {
 object MainFunctionTest extends Test {
   val globalDecs = CGlobalDeclaration(CDeclarationSpecifiers(List(CTypeFloat)), List(CDeclaratorWithAssign(CDeclareIdentifier("a"), CExpressionInitializer(CConstantFloat(0))), CDeclaratorWithAssign(CDeclareIdentifier("b"), CExpressionInitializer(CConstantInteger(1))))) 
   
-  val abBody = CCompoundStmt(List(CStmt(CReturn(Some(CBinaryPrim(CBinaryPlus, CAccessIdentifier("a"), CAccessIdentifier("b")))))))
+  val abBody = CCompoundStmt(List(CReturn(Some(CBinaryPrim(CBinaryPlus, CAccessIdentifier("a"), CAccessIdentifier("b"))))))
   val ab = generateFunction(CDeclarationSpecifiers(List(CTypeInteger)), "ab", List(), abBody)
   
-  val mainBody = CCompoundStmt(List(CStmt(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%d"), CCall(CAccessIdentifier("ab"), List())))))), CStmt(CReturn(Some(CConstantInteger(0))))))
+  val mainBody = CCompoundStmt(List(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%d"), CCall(CAccessIdentifier("ab"), List()))))), CReturn(Some(CConstantInteger(0)))))
   val main = generateMain(mainBody)
   
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), globalDecs, ab, main))
@@ -31,8 +31,8 @@ object MainFunctionTest extends Test {
 
 object IfTest extends Test {
   val x = generateLocalDeclaration(CDeclarationSpecifiers(List(CTypeInteger)), "x", CConstantInteger(0))
-  val ifStmt = CStmt(CIf(CBinaryPrim(CBinaryEquality, CAccessIdentifier("x"), CConstantInteger(2)), CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("Yay")))))))
-  val mainBody = CCompoundStmt(List(x, ifStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val ifStmt = CIf(CBinaryPrim(CBinaryEquality, CAccessIdentifier("x"), CConstantInteger(2)), CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("Yay"))))))
+  val mainBody = CCompoundStmt(List(x, ifStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -44,8 +44,8 @@ object IfElseTest extends Test {
   val x = generateLocalDeclaration(CDeclarationSpecifiers(List(CTypeInteger)), "x", CConstantInteger(0))
   val trueBranch = CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("Yay")))))
   val falseBranch = CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("Boo")))))
-  val ifElseStmt = CStmt(CIfElse(CBinaryPrim(CBinaryEquality, CAccessIdentifier("x"), CConstantInteger(2)), trueBranch, falseBranch))
-  val mainBody = CCompoundStmt(List(x, ifElseStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val ifElseStmt = CIfElse(CBinaryPrim(CBinaryEquality, CAccessIdentifier("x"), CConstantInteger(2)), trueBranch, falseBranch)
+  val mainBody = CCompoundStmt(List(x, ifElseStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -55,11 +55,11 @@ object IfElseTest extends Test {
 
 object SwitchTest extends Test {
   val x = generateLocalDeclaration(CDeclarationSpecifiers(List(CTypeInteger)), "x", CConstantInteger(0))
-  val case0 = CStmt(CCaseStmt(CConstantInteger(0), CCompoundStmt(List(CStmt(CReturn(Some(CConstantInteger(0))))))))
-  val case1 = CStmt(CCaseStmt(CConstantInteger(1), CCompoundStmt(List(CStmt(CReturn(Some(CConstantInteger(1))))))))
+  val case0 = CCaseStmt(CConstantInteger(0), CCompoundStmt(List(CReturn(Some(CConstantInteger(0))))))
+  val case1 = CCaseStmt(CConstantInteger(1), CCompoundStmt(List(CReturn(Some(CConstantInteger(1))))))
   val switchBody = CCompoundStmt(List(case0, case1))
-  val switchStmt = CStmt(CSwitch(CAccessIdentifier("x"), switchBody))
-  val mainBody = CCompoundStmt(List(x, switchStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val switchStmt = CSwitch(CAccessIdentifier("x"), switchBody)
+  val mainBody = CCompoundStmt(List(x, switchStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -69,9 +69,9 @@ object SwitchTest extends Test {
 
 object WhileTest extends Test {
   val i = generateLocalDeclaration(CDeclarationSpecifiers(List(CTypeInteger)), "i", CConstantInteger(0))
-  val whileBody = CCompoundStmt(List(CStmt(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i")))))), CStmt(CExpressionStmt(Some(CPostfixIncrement(CAccessIdentifier("i")))))))
-  val whileStmt = CStmt(CWhile(CBinaryPrim(CBinaryLessThan, CAccessIdentifier("i"), CConstantInteger(2)), whileBody))
-  val mainBody = CCompoundStmt(List(i, whileStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val whileBody = CCompoundStmt(List(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i"))))), CExpressionStmt(Some(CPostfixIncrement(CAccessIdentifier("i"))))))
+  val whileStmt = CWhile(CBinaryPrim(CBinaryLessThan, CAccessIdentifier("i"), CConstantInteger(2)), whileBody)
+  val mainBody = CCompoundStmt(List(i, whileStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -81,9 +81,9 @@ object WhileTest extends Test {
 
 object DoWhileTest extends Test {
   val i = generateLocalDeclaration(CDeclarationSpecifiers(List(CTypeInteger)), "i", CConstantInteger(0))
-  val doWhileBody = CCompoundStmt(List(CStmt(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i")))))), CStmt(CExpressionStmt(Some(CPostfixIncrement(CAccessIdentifier("i")))))))
-  val doWhileStmt = CStmt(CDoWhile(doWhileBody, CBinaryPrim(CBinaryLessThanOrEquals, CAccessIdentifier("i"), CConstantInteger(2))))
-  val mainBody = CCompoundStmt(List(i, doWhileStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val doWhileBody = CCompoundStmt(List(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i"))))), CExpressionStmt(Some(CPostfixIncrement(CAccessIdentifier("i"))))))
+  val doWhileStmt = CDoWhile(doWhileBody, CBinaryPrim(CBinaryLessThanOrEquals, CAccessIdentifier("i"), CConstantInteger(2)))
+  val mainBody = CCompoundStmt(List(i, doWhileStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -96,9 +96,9 @@ object ForTest extends Test {
   val forInit = CAssign(CAccessIdentifier("i"), CEquals, CConstantInteger(10))
   val forCond = CBinaryPrim(CBinaryGreaterThanOrEquals, CAccessIdentifier("i"), CConstantInteger(0))
   val forInc = CPrefixDecrement(CAccessIdentifier("i"))
-  val forBody = CCompoundStmt(List(CStmt(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i"))))))))
-  val forStmt = CStmt(CFor(Some(forInit), Some(forCond), Some(forInc), forBody))
-  val mainBody = CCompoundStmt(List(i, forStmt, CStmt(CReturn(Some(CConstantInteger(0))))))
+  val forBody = CCompoundStmt(List(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%i\\n"), CAccessIdentifier("i")))))))
+  val forStmt = CFor(Some(forInit), Some(forCond), Some(forInc), forBody)
+  val mainBody = CCompoundStmt(List(i, forStmt, CReturn(Some(CConstantInteger(0)))))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
   def test = compileAndRun(ast)
@@ -108,8 +108,8 @@ object ForTest extends Test {
 
 object ArrayTest extends Test {
   val a = CLocalDeclaration(CDeclarationSpecifiers(List(CTypeChar)), List(CDeclaratorWrap(CDeclareArray(CDeclareIdentifier("a"), Some(CConstantInteger(10))))))
-  val assign = CStmt(CExpressionStmt(Some(CAssign(CAccessIndex(CAccessIdentifier("a"), CConstantInteger(0)), CEquals, CConstantChar('Y')))))
-  val print = CStmt(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%c\\n"), CAccessIndex(CAccessIdentifier("a"), CConstantInteger(0)))))))
+  val assign = CExpressionStmt(Some(CAssign(CAccessIndex(CAccessIdentifier("a"), CConstantInteger(0)), CEquals, CConstantChar('Y'))))
+  val print = CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%c\\n"), CAccessIndex(CAccessIdentifier("a"), CConstantInteger(0))))))
   val mainBody = CCompoundStmt(List(a, assign, print))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), generateMain(mainBody)))
   
@@ -122,9 +122,9 @@ object PointerTest extends Test {
   val p = CLocalDeclaration(CDeclarationSpecifiers(List(CTypeChar)), List(CDeclaratorWrap(CPointerDeclarator(CPointer(None, None), CDeclareIdentifier("p")))))
   val pp = CLocalDeclaration(CDeclarationSpecifiers(List(CTypeChar)), List(CDeclaratorWrap(CPointerDeclarator(CPointer(Some(CPointer(None, None)), None), CDeclareIdentifier("pp")))))
   val malloc = CCall(CAccessIdentifier("malloc"), List(CSizeofTypeName(CTypeName(CTypeSpecifierQualifier(CTypeChar, None), None))))
-  val assignP = CStmt(CExpressionStmt(Some(CAssign(CAccessIdentifier("p"), CEquals, CCast(CTypeName(CTypeSpecifierQualifier(CTypeChar, None), Some(CAbstractPointer(CPointer(None, None)))), malloc)))))
-  val assignPP = CStmt(CExpressionStmt(Some(CAssign(CAccessIdentifier("pp"), CEquals, CUnaryPrim(CAddress, CAccessIdentifier("p"))))))
-  val assignPP2 = CStmt(CExpressionStmt(Some(CAssign(CUnaryPrim(CDeref, CAccessIdentifier("pp")), CEquals, CAccessIdentifier("p")))))
+  val assignP = CExpressionStmt(Some(CAssign(CAccessIdentifier("p"), CEquals, CCast(CTypeName(CTypeSpecifierQualifier(CTypeChar, None), Some(CAbstractPointer(CPointer(None, None)))), malloc))))
+  val assignPP = CExpressionStmt(Some(CAssign(CAccessIdentifier("pp"), CEquals, CUnaryPrim(CAddress, CAccessIdentifier("p")))))
+  val assignPP2 = CExpressionStmt(Some(CAssign(CUnaryPrim(CDeref, CAccessIdentifier("pp")), CEquals, CAccessIdentifier("p"))))
   val mainBody = CCompoundStmt(List(p, pp, assignP, assignPP, assignPP2))
   val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdlib.h")), generateMain(mainBody)))
 
