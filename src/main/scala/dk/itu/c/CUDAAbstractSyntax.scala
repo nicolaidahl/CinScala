@@ -6,7 +6,7 @@ object CUDAAbstractSyntax {
   case class CUDAProgram(contents: List[CExternalDeclaration]) extends Program
   
   case class CUDAFunctionDec(functionType: CUDAFunctionQualifier, declarationSpecifiers: Option[CDeclarationSpecifiers], declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
-  compoundStmt: CompoundStmt) extends CExternalDeclaration
+  compoundStmt: CCompoundStmt) extends CExternalDeclaration
     
   sealed abstract class CUDAFunctionQualifier
   case object CUDAGlobalQualifier extends CUDAFunctionQualifier
