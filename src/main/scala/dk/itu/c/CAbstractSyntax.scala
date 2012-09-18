@@ -41,13 +41,13 @@ object CAbstractSyntax {
   //Top level declaration
   abstract class CExternalDeclaration
   case class CFunctionDec(declarationSpecifiers: Option[CDeclarationSpecifiers], declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
-  compoundStmt: CompoundStmt) extends CExternalDeclaration
-  case class GlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
-  case class PreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
+  compoundStmt: CCompoundStmt) extends CExternalDeclaration
+  case class CGlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
+  case class CPreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
   
   sealed abstract class CControlLine //TODO implement the rest
-  case class IncludeLocal (fileName: String) extends CControlLine
-  case class IncludeGlobal (fileName: String) extends CControlLine
+  case class CIncludeLocal (fileName: String) extends CControlLine
+  case class CIncludeGlobal (fileName: String) extends CControlLine
   
   //Declaration specifier
   case class CDeclarationSpecifiers(decSpecs: List[CDeclarationSpecifierUnit])
@@ -59,103 +59,110 @@ object CAbstractSyntax {
 
   //Init Declarator (wrapper for Declarator allowing assignment)
   sealed abstract class CInitDeclarator
-  case class DeclaratorWrap(dec: CDeclarator) extends CInitDeclarator
-  case class DeclaratorWithAssign(dec: CDeclarator, assignment: CInitializer) extends CInitDeclarator
+  case class CDeclaratorWrap(dec: CDeclarator) extends CInitDeclarator
+  case class CDeclaratorWithAssign(dec: CDeclarator, assignment: CInitializer) extends CInitDeclarator
   
   sealed abstract class CInitializer
-  case class ExpressionInitializer (expr: CExpression) extends CInitializer
-  case class Scalar (initializers: List[CInitializer]) extends CInitializer //{ initializer-list }
+  case class CExpressionInitializer (expr: CExpression) extends CInitializer
+  case class CScalar (initializers: List[CInitializer]) extends CInitializer //{ initializer-list }
   
   sealed abstract class CDeclarator
-  case class PointerDeclarator(pointer: CPointer, declarator: CDeclarator) extends CDeclarator
-  case class DeclareIdentifier(name: String) extends CDeclarator
-  case class ParenthesiseDeclarator(declarator: CDeclarator) extends CDeclarator //(declarator)
-  case class DeclareArray(directDeclarator: CDeclarator, expr: Option[CExpression]) extends CDeclarator //direct-declarator [ constant-expressionopt ]
-  case class ParameterList(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2 ) 
-  case class ParameterListWithEllipsis(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2, ... )
-  case class IdentifierList(directDeclarator: CDeclarator, identifierList: Option[List[String]]) extends CDeclarator //direct-declarator ( identifier-list_opt )
+  case class CPointerDeclarator(pointer: CPointer, declarator: CDeclarator) extends CDeclarator
+  case class CDeclareIdentifier(name: String) extends CDeclarator
+  case class CParenthesiseDeclarator(declarator: CDeclarator) extends CDeclarator //(declarator)
+  case class CDeclareArray(directDeclarator: CDeclarator, expr: Option[CExpression]) extends CDeclarator //direct-declarator [ constant-expressionopt ]
+  case class CParameterList(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2 ) 
+  case class CParameterListWithEllipsis(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2, ... )
+  case class CIdentifierList(directDeclarator: CDeclarator, identifierList: Option[List[String]]) extends CDeclarator //direct-declarator ( identifier-list_opt )
   
   case class CPointer(pointer: Option[CPointer] = None, typeQualifier: Option[List[CTypeQualifier]] = None) //*type-qualifier-list_opt pointer_opt
   
   sealed abstract class CParameterDeclaration
-  case class NormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
-  case class NormalDeclarationSimple(typeSpec: CTypeSpecifier, declarator: CDeclarator) extends CParameterDeclaration
-  case class AbstractDeclaration(decSpec: CDeclarationSpecifiers, abstractDeclarator: Option[CAbstractDeclarator]) extends CParameterDeclaration
+  case class CNormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
+  case class CNormalDeclarationSimple(typeSpec: CTypeSpecifier, declarator: CDeclarator) extends CParameterDeclaration
+  case class CAbstractDeclaration(decSpec: CDeclarationSpecifiers, abstractDeclarator: Option[CAbstractDeclarator]) extends CParameterDeclaration
   
   sealed abstract class CAbstractDeclarator
-  case class AbstractPointer(pointer: CPointer) extends CAbstractDeclarator
-  case class NormalDirectAbstractDeclarator(pointer: Option[CPointer], directAbDec: CDirectAbstractDeclarator) extends CAbstractDeclarator //pointer_opt direct-abstract-declarator
+  case class CAbstractPointer(pointer: CPointer) extends CAbstractDeclarator
+  case class CNormalDirectAbstractDeclarator(pointer: Option[CPointer], directAbDec: CDirectAbstractDeclarator) extends CAbstractDeclarator //pointer_opt direct-abstract-declarator
   
   sealed abstract class CDirectAbstractDeclarator
-  case class ParenthesiseAbDec(abstractDeclarator: CAbstractDeclarator) extends CDirectAbstractDeclarator
-  case class ArrayAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], expr: CConstantExpression) extends CDirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
-  case class FunctionAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
+  case class CParenthesiseAbDec(abstractDeclarator: CAbstractDeclarator) extends CDirectAbstractDeclarator
+  case class CArrayAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], expr: CConstantExpression) extends CDirectAbstractDeclarator //direct-abstract-declaratoropt [constant-expression_opt]
+  case class CFunctionAbDec(directAbstractDeclarator: Option[CDirectAbstractDeclarator], paramList: List[CParameterDeclaration], ellipsis: Boolean) extends CDirectAbstractDeclarator //direct-abstract-declarator_opt (parameter-type-list_opt)
   
   //Storage, type qualifier & type speficier
   sealed abstract class CDeclarationSpecifierUnit
   
   //Storage class
   sealed abstract class CStorageClassSpecifier extends CDeclarationSpecifierUnit
-  case object Auto extends CStorageClassSpecifier
-  case object Register extends CStorageClassSpecifier
-  case object Static extends CStorageClassSpecifier
-  case object Extern extends CStorageClassSpecifier
-  case object Typedef extends CStorageClassSpecifier
+  case object CAuto extends CStorageClassSpecifier
+  case object CRegister extends CStorageClassSpecifier
+  case object CStatic extends CStorageClassSpecifier
+  case object CExtern extends CStorageClassSpecifier
+  case object CTypedef extends CStorageClassSpecifier
 
   //Type qualifier
   sealed abstract class CTypeQualifier extends CDeclarationSpecifierUnit
-  case object Const extends CTypeQualifier
-  case object Volatile extends CTypeQualifier
+  case object CConst extends CTypeQualifier
+  case object CVolatile extends CTypeQualifier
   
   //C statements
-  sealed abstract class CStatement
-  case class ExpressionStmt(expr: Option[CExpression]) extends CStatement
-  case class CompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
+  sealed abstract class CStatement extends CStmtOrDec
+  case class CExpressionStmt(expr: Option[CExpression]) extends CStatement
+  object CExpressionStmt {
+    def apply(): CExpressionStmt = CExpressionStmt(None)
+    def apply(expr: CExpression): CExpressionStmt = CExpressionStmt(Some(expr))
+  }
+  case class CCompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
+  object CCompoundStmt {
+    def apply(stmts: CStatement*): CCompoundStmt = CCompoundStmt(stmts.toList)
+  }
   
   sealed abstract class CLabeledStatement extends CStatement
-  case class LabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt
-  case class CaseStmt(expr: CConstantExpression, stmt: CStatement) extends CLabeledStatement // case expr : stmt
-  case class DefaultCaseStmt(stmt: CStatement) extends CLabeledStatement // default : stmt
+  case class CLabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt
+  case class CCaseStmt(expr: CConstantExpression, stmt: CStatement) extends CLabeledStatement // case expr : stmt
+  case class CDefaultCaseStmt(stmt: CStatement) extends CLabeledStatement // default : stmt
   
   sealed abstract class CSelectionStatement extends CStatement
-  case class If (condition: CExpression, stmt: CStatement) extends CSelectionStatement
-  case class IfElse(condition: CExpression, trueBranch: CStatement, elseBranch: CStatement) extends CSelectionStatement
-  case class Switch (switchExpr: CExpression, stmt: CStatement) extends CSelectionStatement //switch(expression) statement
+  case class CIf (condition: CExpression, stmt: CStatement) extends CSelectionStatement
+  case class CIfElse(condition: CExpression, trueBranch: CStatement, elseBranch: CStatement) extends CSelectionStatement
+  case class CSwitch (switchExpr: CExpression, stmt: CStatement) extends CSelectionStatement //switch(expression) statement
   
   sealed abstract class CIterationStatement extends CStatement
-  case class While (condition: CExpression, contents: CStatement) extends CIterationStatement
-  case class For (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: CStatement) extends CIterationStatement
-  case class DoWhile (contents: CStatement, condition: CExpression) extends CIterationStatement
+  case class CWhile (condition: CExpression, contents: CStatement) extends CIterationStatement
+  case class CFor (initialization: Option[CExpression], condition: Option[CExpression], counter: Option[CExpression], contents: CStatement) extends CIterationStatement
+  case class CDoWhile (contents: CStatement, condition: CExpression) extends CIterationStatement
   
   sealed abstract class CJumpStatement extends CStatement
-  case class Goto(identifier: String) extends CJumpStatement
-  case object Continue extends CJumpStatement
-  case object Break extends CJumpStatement
-  case class Return (returnExpression: Option[CExpression]) extends CJumpStatement
-  object Return {
-    def apply(): Return = Return(None)
-    def apply(expr: CExpression): Return = Return(Some(expr))
+  case class CGoto(identifier: String) extends CJumpStatement
+  case object CContinue extends CJumpStatement
+  case object CBreak extends CJumpStatement
+  case class CReturn (returnExpression: Option[CExpression]) extends CJumpStatement
+  object CReturn {
+    def apply(): CReturn = CReturn(None)
+    def apply(expr: CExpression): CReturn = CReturn(Some(expr))
   }
   
   //Statements or declarations
   sealed abstract class CStmtOrDec
-  case class Stmt (statement: CStatement) extends CStmtOrDec
-  case class LocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
+  case class CStmt (statement: CStatement) extends CStmtOrDec
+  case class CLocalDeclaration (decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CStmtOrDec
   
   //C types
   sealed abstract class CTypeSpecifier extends CDeclarationSpecifierUnit
-  case object TypeVoid extends CTypeSpecifier
-  case object TypeChar extends CTypeSpecifier
-  case object TypeShort extends CTypeSpecifier
-  case object TypeInteger extends CTypeSpecifier
-  case object TypeLong extends CTypeSpecifier
-  case object TypeFloat extends CTypeSpecifier
-  case object TypeDouble extends CTypeSpecifier
-  case object TypeSigned extends CTypeSpecifier
-  case object TypeUnsigned extends CTypeSpecifier
-  case class  TypeStruct(ident: Option[String]) extends CTypeSpecifier
-  case class  TypeUnion(ident: Option[String]) extends CTypeSpecifier
-  case class  TypeEnum(ident: Option[String]) extends CTypeSpecifier
+  case object CTypeVoid extends CTypeSpecifier
+  case object CTypeChar extends CTypeSpecifier
+  case object CTypeShort extends CTypeSpecifier
+  case object CTypeInteger extends CTypeSpecifier
+  case object CTypeLong extends CTypeSpecifier
+  case object CTypeFloat extends CTypeSpecifier
+  case object CTypeDouble extends CTypeSpecifier
+  case object CTypeSigned extends CTypeSpecifier
+  case object CTypeUnsigned extends CTypeSpecifier
+  case class  CTypeStruct(ident: Option[String]) extends CTypeSpecifier
+  case class  CTypeUnion(ident: Option[String]) extends CTypeSpecifier
+  case class  CTypeEnum(ident: Option[String]) extends CTypeSpecifier
   
   
   /*case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
@@ -171,46 +178,46 @@ object CAbstractSyntax {
   
   //C Unary operators
   abstract class CUnaryOp 
-  case object Address extends CUnaryOp //&
-  case object Deref extends CUnaryOp //*
-  case object Positive extends CUnaryOp //+
-  case object Negative extends CUnaryOp //-
-  case object OnesCompliment extends CUnaryOp //~ 
-  case object Negation extends CUnaryOp //!
+  case object CAddress extends CUnaryOp //&
+  case object CDeref extends CUnaryOp //*
+  case object CPositive extends CUnaryOp //+
+  case object CNegative extends CUnaryOp //-
+  case object COnesCompliment extends CUnaryOp //~ 
+  case object CNegation extends CUnaryOp //!
   
   //C Binary Operators
   abstract class CBinaryOp
-  case object BinaryPlus extends CBinaryOp
-  case object BinaryMinus extends CBinaryOp
-  case object BinaryTimes extends CBinaryOp
-  case object BinaryDivide extends CBinaryOp
-  case object BinaryModulo extends CBinaryOp
-  case object BinaryEquality extends CBinaryOp
-  case object BinaryLessThan extends CBinaryOp
-  case object BinaryLessThanOrEquals extends CBinaryOp
-  case object BinaryGreaterThan extends CBinaryOp
-  case object BinaryGreaterThanOrEquals extends CBinaryOp
-  case object BinaryBitwiseOr extends CBinaryOp
-  case object BinaryBitwiseAnd extends CBinaryOp
-  case object BinaryBitwiseXOR extends CBinaryOp
-  case object BinaryLogicalAnd extends CBinaryOp
-  case object BinaryLogicalOr extends CBinaryOp
-  case object BinaryShiftRight extends CBinaryOp
-  case object BinaryShiftLeft extends CBinaryOp
+  case object CBinaryPlus extends CBinaryOp
+  case object CBinaryMinus extends CBinaryOp
+  case object CBinaryTimes extends CBinaryOp
+  case object CBinaryDivide extends CBinaryOp
+  case object CBinaryModulo extends CBinaryOp
+  case object CBinaryEquality extends CBinaryOp
+  case object CBinaryLessThan extends CBinaryOp
+  case object CBinaryLessThanOrEquals extends CBinaryOp
+  case object CBinaryGreaterThan extends CBinaryOp
+  case object CBinaryGreaterThanOrEquals extends CBinaryOp
+  case object CBinaryBitwiseOr extends CBinaryOp
+  case object CBinaryBitwiseAnd extends CBinaryOp
+  case object CBinaryBitwiseXOR extends CBinaryOp
+  case object CBinaryLogicalAnd extends CBinaryOp
+  case object CBinaryLogicalOr extends CBinaryOp
+  case object CBinaryShiftRight extends CBinaryOp
+  case object CBinaryShiftLeft extends CBinaryOp
   
   //C AssignmentOperators
   abstract class CAssignmentOperator
-  case object Equals extends CAssignmentOperator // =
-  case object TimesEquals extends CAssignmentOperator // *=
-  case object DivisionEquals extends CAssignmentOperator // /=
-  case object ModuloEquals extends CAssignmentOperator // %=
-  case object PlusEquals extends CAssignmentOperator // +=
-  case object MinusEquals extends CAssignmentOperator // -=
-  case object ShiftLeftEquals extends CAssignmentOperator // <<=
-  case object ShiftRightEquals extends CAssignmentOperator // >>=
-  case object BitwiseAndEquals extends CAssignmentOperator // &=
-  case object BitwiseOrEquals extends CAssignmentOperator // |=
-  case object BitwiseXOREquals extends CAssignmentOperator // ^=
+  case object CEquals extends CAssignmentOperator // =
+  case object CTimesEquals extends CAssignmentOperator // *=
+  case object CDivisionEquals extends CAssignmentOperator // /=
+  case object CModuloEquals extends CAssignmentOperator // %=
+  case object CPlusEquals extends CAssignmentOperator // +=
+  case object CMinusEquals extends CAssignmentOperator // -=
+  case object CShiftLeftEquals extends CAssignmentOperator // <<=
+  case object CShiftRightEquals extends CAssignmentOperator // >>=
+  case object CBitwiseAndEquals extends CAssignmentOperator // &=
+  case object CBitwiseOrEquals extends CAssignmentOperator // |=
+  case object CBitwiseXOREquals extends CAssignmentOperator // ^=
     
   //TypeName
   case class CTypeName(qualifierSpecifierList: CTypeSpecifierQualifier, abstractDeclarator: Option[CAbstractDeclarator])
@@ -218,40 +225,40 @@ object CAbstractSyntax {
   
   //C Expressions
   abstract class CExpression
-  case class Assign (assignTo: CUnaryExpression, operator: CAssignmentOperator, expr: CExpression) extends CExpression  //x=e  or  *p=e  or  a[e]=e 
+  case class CAssign (assignTo: CUnaryExpression, operator: CAssignmentOperator, expr: CExpression) extends CExpression  //x=e  or  *p=e  or  a[e]=e 
   
   abstract class CConstantExpression extends CExpression
-  case class ConditionalExpression (expr1: CGeneralExpression, expr2: CExpression, expr3: CConstantExpression) extends CConstantExpression //e1 ? e2 : e3
+  case class CConditionalExpression (expr1: CGeneralExpression, expr2: CExpression, expr3: CConstantExpression) extends CConstantExpression //e1 ? e2 : e3
   
   abstract class CGeneralExpression extends CConstantExpression
-  case class BinaryPrim (operator: CBinaryOp, expression1: CExpression, expression2: CExpression) extends CGeneralExpression //Binary primitive operator
+  case class CBinaryPrim (operator: CBinaryOp, expression1: CExpression, expression2: CExpression) extends CGeneralExpression //Binary primitive operator
   
   abstract class CCastExpression extends CGeneralExpression
-  case class Cast(newType: CTypeName, expression: CCastExpression) extends CCastExpression //(newType) expression;
+  case class CCast(newType: CTypeName, expression: CCastExpression) extends CCastExpression //(newType) expression;
   
   abstract class CUnaryExpression extends CCastExpression
-  case class UnaryPrim (operator: CUnaryOp, expression: CCastExpression) extends CUnaryExpression //Unary primitive operator
-  case class PrefixIncrement (expression: CUnaryExpression) extends CUnaryExpression
-  case class PrefixDecrement (expression: CUnaryExpression) extends CUnaryExpression
-  case class SizeofUnary (expression: CUnaryExpression) extends CUnaryExpression
-  case class SizeofTypeName (typeName: CTypeName) extends CUnaryExpression
+  case class CUnaryPrim (operator: CUnaryOp, expression: CCastExpression) extends CUnaryExpression //Unary primitive operator
+  case class CPrefixIncrement (expression: CUnaryExpression) extends CUnaryExpression
+  case class CPrefixDecrement (expression: CUnaryExpression) extends CUnaryExpression
+  case class CSizeofUnary (expression: CUnaryExpression) extends CUnaryExpression
+  case class CSizeofTypeName (typeName: CTypeName) extends CUnaryExpression
   
   abstract class CPostfixExpression extends CUnaryExpression
-  case class PostfixIncrement (expression: CPostfixExpression) extends CPostfixExpression
-  case class PostfixDecrement (expression: CPostfixExpression) extends CPostfixExpression
-  case class AccessIndex (postfixExpr: CPostfixExpression, expr: CExpression) extends CPostfixExpression //postfix-expression[expression]
-  case class Call (postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CPostfixExpression //postfix-expression(argument-expression-list_opt)
-  case class AccessMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression //postfix-expression.identifier
-  case class AccessArrowMember (postfixExpr: CPostfixExpression, memberToAccess: DeclareIdentifier) extends CPostfixExpression // postfix-expression->identifier
+  case class CPostfixIncrement (expression: CPostfixExpression) extends CPostfixExpression
+  case class CPostfixDecrement (expression: CPostfixExpression) extends CPostfixExpression
+  case class CAccessIndex (postfixExpr: CPostfixExpression, expr: CExpression) extends CPostfixExpression //postfix-expression[expression]
+  case class CCall (postfixExpression: CPostfixExpression, arguments: List[CExpression]) extends CPostfixExpression //postfix-expression(argument-expression-list_opt)
+  case class CAccessMember (postfixExpr: CPostfixExpression, memberToAccess: CDeclareIdentifier) extends CPostfixExpression //postfix-expression.identifier
+  case class CAccessArrowMember (postfixExpr: CPostfixExpression, memberToAccess: CDeclareIdentifier) extends CPostfixExpression // postfix-expression->identifier
   
   abstract class CPrimaryExpression extends CPostfixExpression
-  case class AccessIdentifier(name: String) extends CPrimaryExpression
-  case class ConstantInteger (contents: Int) extends CPrimaryExpression
-  case class ConstantChar (contents: Char) extends CPrimaryExpression
-  case class ConstantFloat (contents: Float) extends CPrimaryExpression
-  case object ConstantEnumeration extends CPrimaryExpression //TODO find out what this is
-  case class CharArray (content: String) extends CPrimaryExpression
-  case class ParenthesiseExpr (expression: CExpression) extends CPrimaryExpression
+  case class CAccessIdentifier(name: String) extends CPrimaryExpression
+  case class CConstantInteger (contents: Int) extends CPrimaryExpression
+  case class CConstantChar (contents: Char) extends CPrimaryExpression
+  case class CConstantFloat (contents: Float) extends CPrimaryExpression
+  case object CConstantEnumeration extends CPrimaryExpression //TODO find out what this is
+  case class CCharArray (content: String) extends CPrimaryExpression
+  case class CParenthesiseExpr (expression: CExpression) extends CPrimaryExpression
   
 }
 

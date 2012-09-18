@@ -53,8 +53,8 @@ trait CGenerator {
   
   def generateControlLine(instr: CControlLine, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
-      case IncludeLocal(s) => "#include \"" + s + "\" \n"
-      case IncludeGlobal(s) => "#include <" + s + "> \n"
+      case CIncludeLocal(s) => "#include \"" + s + "\" \n"
+      case CIncludeGlobal(s) => "#include <" + s + "> \n"
     }
   }
   
@@ -63,7 +63,7 @@ trait CGenerator {
 	  case Nil => (varEnv, funEnv, "")
 	  case head :: tail =>
 	    head match {
-	      case GlobalDeclaration(decSpecs, declarators) =>
+	      case CGlobalDeclaration(decSpecs, declarators) =>
 	        val (varEnv1, str) = generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
 	        val (varEnv2, funEnv1, str1) = generateExternalDeclarations(varEnv1, funEnv)(tail)
 	        (varEnv2, funEnv1, str + "\n\n" + str1)
@@ -71,7 +71,7 @@ trait CGenerator {
 	        val (funEnv1, str) = generateFunctionDec(varEnv, funEnv, function)
 	        val (varEnv1, funEnv2, str1) = generateExternalDeclarations(varEnv, funEnv1)(tail)
 	        (varEnv1, funEnv2, str + "\n" + str1)
-	      case PreprocessorInstruction(precompInstr) =>
+	      case CPreprocessorInstruction(precompInstr) =>
 	        val result = generateControlLine(precompInstr, varEnv, funEnv)
 	        val (varEnv1, funEnv1, str1) = generateExternalDeclarations(varEnv, funEnv)(tail)
 	        (varEnv1, funEnv1, result + "\n" + str1)
@@ -143,8 +143,8 @@ trait CGenerator {
   
   def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CInitDeclarator): (String, String) = {
     dec match {
-      case DeclaratorWrap(d) => generateDeclarator(varEnv, funEnv)(d)
-      case DeclaratorWithAssign(d, a) => {
+      case CDeclaratorWrap(d) => generateDeclarator(varEnv, funEnv)(d)
+      case CDeclaratorWithAssign(d, a) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         (ident, str + " = " + generateInitializer(varEnv, funEnv)(a))
       }
@@ -153,8 +153,8 @@ trait CGenerator {
   
   def generateInitializer(varEnv: VarEnv, funEnv: FunEnv)(init: CInitializer): String = {
     init match {
-      case ExpressionInitializer(expr) => generateExpression(varEnv, funEnv)(expr)
-      case Scalar(initializers) => "{" + initializers.map(i => generateInitializer(varEnv, funEnv)(i)).mkString(", ") + "}"
+      case CExpressionInitializer(expr) => generateExpression(varEnv, funEnv)(expr)
+      case CScalar(initializers) => "{" + initializers.map(i => generateInitializer(varEnv, funEnv)(i)).mkString(", ") + "}"
     }
   }
   
@@ -187,14 +187,14 @@ trait CGenerator {
   
   def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {
     dec match {
-      case PointerDeclarator(pointer, declarator) => 
+      case CPointerDeclarator(pointer, declarator) => 
         val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
         (ident, generatePointer(pointer) + str)
-      case DeclareIdentifier(name) => (name, name)
-      case ParenthesiseDeclarator(declarator) => 
+      case CDeclareIdentifier(name) => (name, name)
+      case CParenthesiseDeclarator(declarator) => 
         val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
         (ident, "(" + str + ")")
-      case DeclareArray(dirDecl, expr) => {
+      case CDeclareArray(dirDecl, expr) => {
     	val exprVal = expr match {
     	  case Some(e) => generateExpression(varEnv, funEnv)(e)
     	  case None => ""
@@ -202,16 +202,16 @@ trait CGenerator {
     	val (ident, str) = generateDeclarator(varEnv, funEnv)(dirDecl)
     	(ident, str + "[" + exprVal + "]")
       }
-      case ParameterList(d, p) => {
+      case CParameterList(d, p) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
         (ident, str + "(" + ps + ")")
       } 
-      case ParameterListWithEllipsis(d, p) =>
+      case CParameterListWithEllipsis(d, p) =>
         val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
         (ident, str + "(" + ps + ", ...)")
-      case IdentifierList(d, i) => {
+      case CIdentifierList(d, i) => {
         val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val is = i match {
           case Some(ii) => ii.mkString(", ")
@@ -224,14 +224,14 @@ trait CGenerator {
   
   def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: CParameterDeclaration): String = {
     p match {
-      case NormalDeclaration(decSpecs, dec) => {
+      case CNormalDeclaration(decSpecs, dec) => {
         val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
-      case NormalDeclarationSimple(typeSpec, dec) =>
+      case CNormalDeclarationSimple(typeSpec, dec) =>
         val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateTypeSpecifier(typeSpec) + " " + str
-      case AbstractDeclaration(decSpecs, dec) => {
+      case CAbstractDeclaration(decSpecs, dec) => {
         val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
           case None => ""
@@ -243,8 +243,8 @@ trait CGenerator {
   
   def generateAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(a: CAbstractDeclarator): String = {
     a match {
-      case AbstractPointer(p) => generatePointer(p)
-      case NormalDirectAbstractDeclarator(p, dec) => {
+      case CAbstractPointer(p) => generatePointer(p)
+      case CNormalDirectAbstractDeclarator(p, dec) => {
         val ps = p match {
           case Some(p) => generatePointer(p)
           case None => ""
@@ -257,10 +257,10 @@ trait CGenerator {
   
   def generateDirectAbstractDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dac: CDirectAbstractDeclarator): String = {
     dac match {
-      case ParenthesiseAbDec(a) => {
+      case CParenthesiseAbDec(a) => {
         "(" + generateAbstractDeclarator(varEnv, funEnv)(a) + ")"
       }
-      case ArrayAbDec(d, e) => {
+      case CArrayAbDec(d, e) => {
         val str = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
           case None => (None, "")
@@ -268,7 +268,7 @@ trait CGenerator {
         
         str + "[" + generateExpression(varEnv, funEnv)(e) + "]"
       }
-      case FunctionAbDec(d, p, e) => {
+      case CFunctionAbDec(d, p, e) => {
         val str = d match {
           case Some(d) => generateDirectAbstractDeclarator(varEnv, funEnv)(d)
           case None => (None, "") 
@@ -286,35 +286,35 @@ trait CGenerator {
   
   def generateStorageClassSpecifier(storageSpecs: CStorageClassSpecifier) = {
     storageSpecs match {
-      case Auto => "auto"
-      case Register => "register"
-      case Static => "static"
-      case Extern => "extern"
-      case Typedef => "typedef"
+      case CAuto => "auto"
+      case CRegister => "register"
+      case CStatic => "static"
+      case CExtern => "extern"
+      case CTypedef => "typedef"
     }
   }
   
   def generateTypeSpecifier(typeSpec: CTypeSpecifier) = {
     typeSpec match {
-      case TypeVoid => "void"
-      case TypeChar => "char"
-      case TypeShort => "short"
-      case TypeInteger => "int"
-      case TypeLong => "long"
-      case TypeFloat => "float"
-      case TypeDouble => "double"
-      case TypeSigned => "signed"
-      case TypeUnsigned => "unsigned"
-      case TypeStruct(name) => name.getOrElse("")
-      case TypeEnum(name) => name.getOrElse("")
-      case TypeUnion(name) => name.getOrElse("")
+      case CTypeVoid => "void"
+      case CTypeChar => "char"
+      case CTypeShort => "short"
+      case CTypeInteger => "int"
+      case CTypeLong => "long"
+      case CTypeFloat => "float"
+      case CTypeDouble => "double"
+      case CTypeSigned => "signed"
+      case CTypeUnsigned => "unsigned"
+      case CTypeStruct(name) => name.getOrElse("")
+      case CTypeEnum(name) => name.getOrElse("")
+      case CTypeUnion(name) => name.getOrElse("")
     }
   }
   
   def generateTypeQualifier(typeQual: CTypeQualifier) = {
     typeQual match {
-      case Const => "const"
-      case Volatile => "volatile"
+      case CConst => "const"
+      case CVolatile => "volatile"
     }
   }
   
@@ -322,20 +322,20 @@ trait CGenerator {
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CStatement): String = {
     stmt match {
-      case ExpressionStmt(expr) => expr match {
+      case CExpressionStmt(expr) => expr match {
           case Some(es) => generateExpression(varEnv, funEnv)(es) + ";"
           case None => ";"
         }
-      case CompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
+      case CCompoundStmt(cs) => generateCompoundStmt(varEnv, funEnv)(cs)
       
       //Labeled Statements
-      case LabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
-      case CaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + ": " + generateStmt(varEnv, funEnv)(s)
-      case DefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
+      case CLabelStmt(i, s) => i + ": " + generateStmt(varEnv, funEnv)(s) + "\n"
+      case CCaseStmt(e, s) => "case " + generateExpression(varEnv, funEnv)(e) + ": " + generateStmt(varEnv, funEnv)(s)
+      case CDefaultCaseStmt(s) => "default: \n" + generateStmt(varEnv, funEnv)(s)
       
       //Iteration Statements
-      case While(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") \n" + generateStmt(varEnv, funEnv)(s)
-      case For(i, e, c, s) => {
+      case CWhile(e, s) => "while(" + generateExpression(varEnv, funEnv)(e) + ") \n" + generateStmt(varEnv, funEnv)(s)
+      case CFor(i, e, c, s) => {
         val ss = List(i, e, c).map({
           case expr => expr match {
             case Some(e) => generateExpression(varEnv, funEnv)(e)
@@ -345,18 +345,18 @@ trait CGenerator {
         "for(" + ss.mkString("; ") + ") \n" + generateStmt(varEnv, funEnv)(s)
         
       }
-      case DoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ");\n"
+      case CDoWhile(s, e) => "do {\n" + generateStmt(varEnv, funEnv)(s) + "} while (" + generateExpression(varEnv, funEnv)(e) + ");\n"
 
       //Selection Statements
-      case If(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s) + "\n"
-      case IfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s1) + "\nelse " + generateStmt(varEnv, funEnv)(s2) + "\n"
-      case Switch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s)
+      case CIf(e, s) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s) + "\n"
+      case CIfElse(e, s1, s2) => "if(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s1) + "\nelse " + generateStmt(varEnv, funEnv)(s2) + "\n"
+      case CSwitch(e, s) => "switch(" + generateExpression(varEnv, funEnv)(e) + ") " + generateStmt(varEnv, funEnv)(s)
 
       //Jump Statements
-      case Goto(i) => "goto " + i + ";"
-      case Continue => "continue;"
-      case Break => "break;"
-      case Return(e) => {
+      case CGoto(i) => "goto " + i + ";"
+      case CContinue => "continue;"
+      case CBreak => "break;"
+      case CReturn(e) => {
         val es = e match {
           case Some(expr) => generateExpression(varEnv, funEnv)(expr)
           case None => ""
@@ -383,55 +383,55 @@ trait CGenerator {
   
   def generateStmtOrDec(varEnv: VarEnv, funEnv: FunEnv)(sord: CStmtOrDec): (VarEnv, String) =
     sord match {
-      case Stmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
-      case LocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
+      case CStmt(statement) => (varEnv, generateStmt(varEnv, funEnv)(statement))
+      case CLocalDeclaration(decSpecs, declarators) => generateDeclaration(varEnv, funEnv)(CDeclaration(decSpecs, declarators))
     }
 
   
   def generateUnaryOp(ope: CUnaryOp): String =
     ope match {
-      case Address => "&"
-      case Deref => "*"
-      case Positive => "+"
-      case Negative => "-"
-      case OnesCompliment => "~"
-      case Negation => "!"
+      case CAddress => "&"
+      case CDeref => "*"
+      case CPositive => "+"
+      case CNegative => "-"
+      case COnesCompliment => "~"
+      case CNegation => "!"
     }
   
   def generateBinaryOp(ope: CBinaryOp): String =
     ope match {
-      case BinaryPlus => "+"
-      case BinaryMinus => "-"
-      case BinaryTimes => "*"
-      case BinaryDivide => "/"
-      case BinaryModulo => "%"
-      case BinaryEquality => "=="
-      case BinaryLessThan => "<"
-      case BinaryLessThanOrEquals => "<="
-      case BinaryGreaterThan => ">"
-      case BinaryGreaterThanOrEquals => ">="
-      case BinaryBitwiseOr => "|"
-      case BinaryBitwiseAnd => "&"
-      case BinaryBitwiseXOR => "^"
-      case BinaryLogicalAnd => "&&"
-      case BinaryLogicalOr => "||"
-      case BinaryShiftRight => ">>"
-      case BinaryShiftLeft => "<<"
+      case CBinaryPlus => "+"
+      case CBinaryMinus => "-"
+      case CBinaryTimes => "*"
+      case CBinaryDivide => "/"
+      case CBinaryModulo => "%"
+      case CBinaryEquality => "=="
+      case CBinaryLessThan => "<"
+      case CBinaryLessThanOrEquals => "<="
+      case CBinaryGreaterThan => ">"
+      case CBinaryGreaterThanOrEquals => ">="
+      case CBinaryBitwiseOr => "|"
+      case CBinaryBitwiseAnd => "&"
+      case CBinaryBitwiseXOR => "^"
+      case CBinaryLogicalAnd => "&&"
+      case CBinaryLogicalOr => "||"
+      case CBinaryShiftRight => ">>"
+      case CBinaryShiftLeft => "<<"
     }
     
   def generateAssignmentOp(ope: CAssignmentOperator): String =
     ope match {
-      case Equals => "="
-      case TimesEquals => "*="
-      case DivisionEquals => "/="
-      case ModuloEquals => "%="
-      case PlusEquals => "+="
-      case MinusEquals => "-="
-      case ShiftLeftEquals => "<<="
-      case ShiftRightEquals => ">>="
-      case BitwiseAndEquals => "&="
-      case BitwiseOrEquals => "|="
-      case BitwiseXOREquals => "^="
+      case CEquals => "="
+      case CTimesEquals => "*="
+      case CDivisionEquals => "/="
+      case CModuloEquals => "%="
+      case CPlusEquals => "+="
+      case CMinusEquals => "-="
+      case CShiftLeftEquals => "<<="
+      case CShiftRightEquals => ">>="
+      case CBitwiseAndEquals => "&="
+      case CBitwiseOrEquals => "|="
+      case CBitwiseXOREquals => "^="
     }
     
   def generateTypeName(varEnv: VarEnv, funEnv: FunEnv)(tn: CTypeName): String = {
@@ -456,56 +456,56 @@ trait CGenerator {
   def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
     e match {
       //Assignment Expression
-      case Assign(assignTo, operator, expr) =>  //TODO make sure this works with the varEnv
+      case CAssign(assignTo, operator, expr) =>  //TODO make sure this works with the varEnv
         val assignToStr = generateExpression(varEnv, funEnv)(assignTo)
         val opeStr = generateAssignmentOp(operator)
         val exprStr = generateExpression(varEnv, funEnv)(expr)
         assignToStr + " " + opeStr + " " + exprStr
     
       //Conditional Expression
-      case ConditionalExpression(expr1, expr2, expr3) => 
+      case CConditionalExpression(expr1, expr2, expr3) => 
         generateExpression(varEnv, funEnv)(expr1) + " ? " + generateExpression(varEnv, funEnv)(expr2) + " : " + generateExpression(varEnv, funEnv)(expr3)
     
       //General Expression
-      case BinaryPrim(ope, expr1, expr2) =>
+      case CBinaryPrim(ope, expr1, expr2) =>
         generateExpression(varEnv, funEnv)(expr1) + " " + generateBinaryOp(ope) + " " + generateExpression(varEnv, funEnv)(expr2)
     
       //Cast Expression
-	  case Cast(newType, expr) => "(" + generateTypeName(varEnv, funEnv)(newType) + ") " + generateExpression(varEnv, funEnv)(expr)  
+	  case CCast(newType, expr) => "(" + generateTypeName(varEnv, funEnv)(newType) + ") " + generateExpression(varEnv, funEnv)(expr)  
     
       //Unary Expression
-      case UnaryPrim (operator, expression) => generateUnaryOp(operator) + generateExpression(varEnv, funEnv)(expression) //Unary primitive operator
-      case PrefixIncrement (expression) => "++" + generateExpression(varEnv, funEnv)(expression)
-      case PrefixDecrement (expression) => "--" + generateExpression(varEnv, funEnv)(expression)
-      case SizeofUnary (expression) => "sizeof " + generateExpression(varEnv, funEnv)(expression) 
-      case SizeofTypeName (typeName) => "sizeof(" + generateTypeName(varEnv, funEnv)(typeName) + ")"
+      case CUnaryPrim (operator, expression) => generateUnaryOp(operator) + generateExpression(varEnv, funEnv)(expression) //Unary primitive operator
+      case CPrefixIncrement (expression) => "++" + generateExpression(varEnv, funEnv)(expression)
+      case CPrefixDecrement (expression) => "--" + generateExpression(varEnv, funEnv)(expression)
+      case CSizeofUnary (expression) => "sizeof " + generateExpression(varEnv, funEnv)(expression) 
+      case CSizeofTypeName (typeName) => "sizeof(" + generateTypeName(varEnv, funEnv)(typeName) + ")"
     
       //Postfix Expressions
-      case PostfixIncrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
-      case PostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "--"
-      case AccessIndex (postfixExpr, expr) => 
+      case CPostfixIncrement (expression) => generateExpression(varEnv, funEnv)(expression) + "++"
+      case CPostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "--"
+      case CAccessIndex (postfixExpr, expr) => 
         generateExpression(varEnv,funEnv)(postfixExpr) + "[" + generateExpression(varEnv, funEnv)(expr) + "]"
-      case Call (postfixExpression, arguments) => 
+      case CCall (postfixExpression, arguments) => 
         //if(!lookupFunc(funEnv, identifier))
         //  printf("Warning: Function " + identifier + " is unknown.\n\n")
         generateExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
-      case AccessMember (postfixExpr, memberToAccess) => 
+      case CAccessMember (postfixExpr, memberToAccess) => 
         generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
-      case AccessArrowMember (postfixExpr, memberToAccess) =>
+      case CAccessArrowMember (postfixExpr, memberToAccess) =>
         generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
     
 	  //Primary Expressions
-      case AccessIdentifier(name) => name
-      case ConstantInteger(contents) => contents.toString()
-      case ConstantChar (contents) => "'" + contents.toString() + "'"
-      case ConstantFloat (contents) => {
+      case CAccessIdentifier(name) => name
+      case CConstantInteger(contents) => contents.toString()
+      case CConstantChar (contents) => "'" + contents.toString() + "'"
+      case CConstantFloat (contents) => {
         // Set det locale to English, so commas in floats are written as "."
  	    java.util.Locale.setDefault(java.util.Locale.ENGLISH)
  	    "%.6f".format(contents) + "f"
       }
-      case ConstantEnumeration => "" //TODO find out what this is
-      case CharArray (content) => "\"" + content + "\""
-      case ParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"
+      case CConstantEnumeration => "" //TODO find out what this is
+      case CCharArray (content) => "\"" + content + "\""
+      case CParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"
       case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
     }
   
