@@ -51,6 +51,9 @@ object CAbstractSyntax {
   
   //Declaration specifier
   case class CDeclarationSpecifiers(decSpecs: List[CDeclarationSpecifierUnit])
+  object CDeclarationSpecifiers {
+    def apply(decSpecs: CDeclarationSpecifierUnit*): CDeclarationSpecifiers = this.apply(decSpecs.toList)
+  }
 
   case class CDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator])
 
@@ -72,7 +75,7 @@ object CAbstractSyntax {
   case class ParameterListWithEllipsis(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2, ... )
   case class IdentifierList(directDeclarator: CDeclarator, identifierList: Option[List[String]]) extends CDeclarator //direct-declarator ( identifier-list_opt )
   
-  case class CPointer(pointer: Option[CPointer], typeQualifier: Option[List[CTypeQualifier]]) //*type-qualifier-list_opt pointer_opt
+  case class CPointer(pointer: Option[CPointer] = None, typeQualifier: Option[List[CTypeQualifier]] = None) //*type-qualifier-list_opt pointer_opt
   
   sealed abstract class CParameterDeclaration
   case class NormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
@@ -129,6 +132,10 @@ object CAbstractSyntax {
   case object Continue extends CJumpStatement
   case object Break extends CJumpStatement
   case class Return (returnExpression: Option[CExpression]) extends CJumpStatement
+  object Return {
+    def apply(): Return = Return(None)
+    def apply(expr: CExpression): Return = Return(Some(expr))
+  }
   
   //Statements or declarations
   sealed abstract class CStmtOrDec
