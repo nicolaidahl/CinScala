@@ -41,7 +41,7 @@ object CAbstractSyntax {
   //Top level declaration
   abstract class CExternalDeclaration
   case class CFunctionDec(declarationSpecifiers: Option[CDeclarationSpecifiers], declarator: CDeclarator, declarationList: Option[List[CDeclaration]], 
-  compoundStmt: CCompoundStmt) extends CExternalDeclaration
+      compoundStmt: CCompoundStmt) extends CExternalDeclaration
   case class CGlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
   case class CPreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
   
@@ -75,7 +75,10 @@ object CAbstractSyntax {
   case class CPointerDeclarator(pointer: CPointer, declarator: CDeclarator) extends CDeclarator
   case class CDeclareIdentifier(name: String) extends CDeclarator
   case class CParenthesiseDeclarator(declarator: CDeclarator) extends CDeclarator //(declarator)
-  case class CDeclareArray(directDeclarator: CDeclarator, expr: Option[CExpression]) extends CDeclarator //direct-declarator [ constant-expressionopt ]
+  case class CDeclareArray(directDeclarator: CDeclarator, expr: Option[CExpression] = None) extends CDeclarator //direct-declarator [ constant-expressionopt ]
+  object CDeclareArray {
+    def apply(directDeclarator: CDeclarator, expr: CExpression): CDeclareArray = CDeclareArray(directDeclarator, Some(expr))
+  }
   case class CParameterList(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2 ) 
   case class CParameterListWithEllipsis(directDeclarator: CDeclarator, paramList: List[CParameterDeclaration]) extends CDeclarator //direct-declarator ( param1, param2, ... )
   case class CIdentifierList(directDeclarator: CDeclarator, identifierList: Option[List[String]]) extends CDeclarator //direct-declarator ( identifier-list_opt )
@@ -84,7 +87,6 @@ object CAbstractSyntax {
   
   sealed abstract class CParameterDeclaration
   case class CNormalDeclaration(decSpec: CDeclarationSpecifiers, declarator: CDeclarator) extends CParameterDeclaration
-  case class CNormalDeclarationSimple(typeSpec: CTypeSpecifier, declarator: CDeclarator) extends CParameterDeclaration
   case class CAbstractDeclaration(decSpec: CDeclarationSpecifiers, abstractDeclarator: Option[CAbstractDeclarator]) extends CParameterDeclaration
   
   sealed abstract class CAbstractDeclarator
@@ -143,9 +145,8 @@ object CAbstractSyntax {
   case class CGoto(identifier: String) extends CJumpStatement
   case object CContinue extends CJumpStatement
   case object CBreak extends CJumpStatement
-  case class CReturn (returnExpression: Option[CExpression]) extends CJumpStatement
+  case class CReturn (returnExpression: Option[CExpression] = None) extends CJumpStatement
   object CReturn {
-    def apply(): CReturn = CReturn(None)
     def apply(expr: CExpression): CReturn = CReturn(Some(expr))
   }
   
@@ -160,9 +161,18 @@ object CAbstractSyntax {
   case object CTypeDouble extends CTypeSpecifier
   case object CTypeSigned extends CTypeSpecifier
   case object CTypeUnsigned extends CTypeSpecifier
-  case class  CTypeStruct(ident: Option[String]) extends CTypeSpecifier
-  case class  CTypeUnion(ident: Option[String]) extends CTypeSpecifier
-  case class  CTypeEnum(ident: Option[String]) extends CTypeSpecifier
+  case class  CTypeStruct(ident: Option[String] = None) extends CTypeSpecifier
+  object CTypeStruct {
+    def apply(s: String): CTypeStruct = CTypeStruct(Some(s))
+  }
+  case class CTypeUnion(ident: Option[String] = None) extends CTypeSpecifier
+  object CTypeUnion {
+    def apply(s: String): CTypeUnion = CTypeUnion(Some(s))
+  }
+  case class CTypeEnum(ident: Option[String] = None) extends CTypeSpecifier
+  object CTypeEnum {
+    def apply(s: String): CTypeEnum = CTypeEnum(Some(s))
+  }
   
   
   /*case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier

@@ -1,9 +1,9 @@
 package dk.itu.c
-import CAbstractSyntax._
 
 object CSyntax {
+  import CAbstractSyntax._
+  
   implicit def string2CDeclarator(name: String): CDeclarator = CDeclareIdentifier(name)
-  //implicit def cExpression2CExpressionStmt(e: CExpression): CExpressionStmt = CExpressionStmt(Some(e))
   implicit def cExpression2CExpressionInitializer(e: CExpression): CExpressionInitializer = CExpressionInitializer(e)
   implicit def cExpression2CExpressionStmt(e: CExpression): CExpressionStmt = CExpressionStmt(Some(e))
   implicit def cTypeSpecifier2CDeclarationSpecifiers(t: CTypeSpecifier): CDeclarationSpecifiers = CDeclarationSpecifiers(t)
@@ -51,11 +51,11 @@ object CSyntax {
   
   // Postfix operators
   case class PostfixSyntax(p: CPostfixExpression) {
-    def ++(): CExpression = CPostfixIncrement(p)
-    def --(): CExpression = CPostfixDecrement(p)
-    def get(e: CExpression): CExpression = CAccessIndex(p, e)
-    def dot(m: CDeclareIdentifier): CExpression = CAccessMember(p, m)
-    def ->(m: CDeclareIdentifier): CExpression = CAccessArrowMember(p, m)
+    def ++(): CPostfixIncrement = CPostfixIncrement(p)
+    def --(): CPostfixDecrement = CPostfixDecrement(p)
+    def get(e: CExpression): CAccessIndex = CAccessIndex(p, e)
+    def dot(m: CDeclareIdentifier): CAccessMember = CAccessMember(p, m)
+    def ->(m: CDeclareIdentifier): CAccessArrowMember = CAccessArrowMember(p, m)
   }
   implicit def cExpr2PostfixSyntax(e: CPostfixExpression): PostfixSyntax = PostfixSyntax(e)
   
@@ -71,7 +71,31 @@ object CSyntax {
   def ~(e: CCastExpression) = CUnaryPrim(COnesCompliment, e)
   def !(e: CCastExpression) = CUnaryPrim(CNegation, e)
   
-  // Control flow
+  // Function dec
+  def Function(decSpecs: CDeclarationSpecifiers, declarator: CDeclarator, decList: List[CDeclaration])(contents: CStmtOrDec*): CFunctionDec = 
+    CFunctionDec(Some(decSpecs), declarator, Some(decList), CCompoundStmt(contents.toList))
+    
+  // Selection
+  def If (condition: CExpression)(stmt: CStatement): CIf = 
+    CIf(condition, stmt)
+  
+  def IfElse(condition: CExpression)(trueBranch: CStatement)(elseBranch: CStatement): CIfElse =
+    CIfElse(condition, trueBranch, elseBranch)
+  
+  def Switch(expression: CExpression)(stmt: CStatement): CSwitch =
+    CSwitch(expression, stmt)
+    
+  // Case
+  def Case(expression: CConstantExpression)(stmt: CStatement): CCaseStmt =
+    CCaseStmt(expression, stmt)
+  
+  // Loops
+  def While(condition: CExpression)(contents: CStatement): CWhile = 
+    CWhile(condition, contents)
+    
   def For(initialization: CExpression, condition: CExpression, counter: CExpression)(contents: CStatement): CFor =
     CFor(Some(initialization), Some(condition), Some(counter), contents)
+    
+  def DoWhile(contents: CStatement)(condition: CExpression): CDoWhile =
+    CDoWhile(contents, condition)
 }

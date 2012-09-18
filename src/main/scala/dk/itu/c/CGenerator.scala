@@ -228,9 +228,6 @@ trait CGenerator {
         val str = generateDeclarator(varEnv, funEnv)(dec)._2
         generateDeclarationSpecifiers(decSpecs) + " " + str
       }
-      case CNormalDeclarationSimple(typeSpec, dec) =>
-        val str = generateDeclarator(varEnv, funEnv)(dec)._2
-        generateTypeSpecifier(typeSpec) + " " + str
       case CAbstractDeclaration(decSpecs, dec) => {
         val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
