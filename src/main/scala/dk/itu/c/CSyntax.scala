@@ -76,26 +76,26 @@ object CSyntax {
     CFunctionDec(Some(decSpecs), declarator, Some(decList), CCompoundStmt(contents.toList))
     
   // Selection
-  def If (condition: CExpression)(stmt: CStatement): CIf = 
-    CIf(condition, stmt)
+  def If (condition: CExpression)(contents: CStmtOrDec*): CIf = 
+    CIf(condition, CCompoundStmt(contents.toList))
   
-  def IfElse(condition: CExpression)(trueBranch: CStatement)(elseBranch: CStatement): CIfElse =
-    CIfElse(condition, trueBranch, elseBranch)
+  def IfElse(condition: CExpression)(contentsTrue: CStmtOrDec*)(contentsFalse: CStmtOrDec*): CIfElse =
+    CIfElse(condition, CCompoundStmt(contentsTrue.toList), CCompoundStmt(contentsFalse.toList))
   
-  def Switch(expression: CExpression)(stmt: CStatement): CSwitch =
-    CSwitch(expression, stmt)
+  def Switch(expression: CExpression)(contents: CStmtOrDec*): CSwitch =
+    CSwitch(expression, CCompoundStmt(contents.toList))
     
   // Case
-  def Case(expression: CConstantExpression)(stmt: CStatement): CCaseStmt =
-    CCaseStmt(expression, stmt)
+  def Case(expression: CConstantExpression)(contents: CStmtOrDec*): CCaseStmt =
+    CCaseStmt(expression, CCompoundStmt(contents.toList))
   
   // Loops
-  def While(condition: CExpression)(contents: CStatement): CWhile = 
-    CWhile(condition, contents)
+  def While(condition: CExpression)(contents: CStmtOrDec*): CWhile = 
+    CWhile(condition, CCompoundStmt(contents.toList))
     
-  def For(initialization: CExpression, condition: CExpression, counter: CExpression)(contents: CStatement): CFor =
-    CFor(Some(initialization), Some(condition), Some(counter), contents)
+  def For(initialization: CExpression, condition: CExpression, counter: CExpression)(contents: CStmtOrDec*): CFor =
+    CFor(Some(initialization), Some(condition), Some(counter), CCompoundStmt(contents.toList))
     
-  def DoWhile(contents: CStatement)(condition: CExpression): CDoWhile =
-    CDoWhile(contents, condition)
+  def DoWhile(contents: CStmtOrDec*)(condition: CExpression): CDoWhile =
+    CDoWhile(CCompoundStmt(contents.toList), condition)
 }

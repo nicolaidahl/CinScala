@@ -123,7 +123,7 @@ object CAbstractSyntax {
   }
   case class CCompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
   object CCompoundStmt {
-    def apply(stmts: CStatement*): CCompoundStmt = CCompoundStmt(stmts.toList)
+    def apply(stmts: CStmtOrDec*): CCompoundStmt = CCompoundStmt(stmts.toList)
   }
   
   sealed abstract class CLabeledStatement extends CStatement
