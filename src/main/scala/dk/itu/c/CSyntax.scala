@@ -1,9 +1,25 @@
 package dk.itu.c
 
+object CSyntaxTest extends App with CCompileAndRun {
+  import dk.itu.c.CAbstractSyntax._
+  import dk.itu.c.CSyntax._
+  
+  val main = 
+    Function(CTypeVoid, CParameterList("main", List()))(
+      CReturn(),
+      CReturn()
+  )
+  
+  val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), main))
+  
+  println(compile(ast))
+}
+
 object CSyntax {
   import CAbstractSyntax._
   
-  implicit def string2CDeclarator(name: String): CDeclarator = CDeclareIdentifier(name)
+  //implicit def string2CDeclarator(name: String): CDeclarator = CDeclareIdentifier(name)
+  implicit def string2CDeclareIdentifier(name: String): CDeclareIdentifier = CDeclareIdentifier(name)
   implicit def cExpression2CExpressionInitializer(e: CExpression): CExpressionInitializer = CExpressionInitializer(e)
   implicit def cExpression2CExpressionStmt(e: CExpression): CExpressionStmt = CExpressionStmt(Some(e))
   implicit def cTypeSpecifier2CDeclarationSpecifiers(t: CTypeSpecifier): CDeclarationSpecifiers = CDeclarationSpecifiers(t)
@@ -71,9 +87,12 @@ object CSyntax {
   def ~(e: CCastExpression) = CUnaryPrim(COnesCompliment, e)
   def !(e: CCastExpression) = CUnaryPrim(CNegation, e)
   
-  // Function dec
-  def Function(decSpecs: CDeclarationSpecifiers, declarator: CDeclarator, decList: List[CDeclaration])(contents: CStmtOrDec*): CFunctionDec = 
-    CFunctionDec(Some(decSpecs), declarator, Some(decList), CCompoundStmt(contents.toList))
+  // Declarations
+  def Function(decSpecs: CDeclarationSpecifiers, declarator: CDeclarator, decList: Option[List[CDeclaration]] = None)(contents: CStmtOrDec*): CFunctionDec = 
+    CFunctionDec(Some(decSpecs), declarator, decList, CCompoundStmt(contents.toList))
+    
+  def LocalDeclaration(decSpecs: CDeclarationSpecifiers, ident: CDeclarator, init: CInitializer): CLocalDeclaration =
+    CLocalDeclaration(decSpecs, List(CDeclaratorWithAssign(ident, init)))
     
   // Selection
   def If (condition: CExpression)(contents: CStmtOrDec*): CIf = 
