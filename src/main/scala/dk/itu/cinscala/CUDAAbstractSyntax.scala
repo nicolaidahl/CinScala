@@ -1,5 +1,5 @@
-package dk.itu.c
-import dk.itu.c.CAbstractSyntax._
+package dk.itu.cinscala
+import dk.itu.cinscala.CAbstractSyntax._
 
 object CUDAAbstractSyntax {
   

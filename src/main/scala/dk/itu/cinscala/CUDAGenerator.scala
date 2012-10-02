@@ -1,4 +1,4 @@
-package dk.itu.c
+package dk.itu.cinscala
 import CAbstractSyntax._
 import CUDAAbstractSyntax._
 

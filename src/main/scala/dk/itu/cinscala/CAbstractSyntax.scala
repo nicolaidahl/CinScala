@@ -24,7 +24,7 @@ furnished to do so, subject to the following conditions:
 ----------------------------------------------------------------------
 */
 
-package dk.itu.c
+package dk.itu.cinscala
 
 object CAbstractSyntax {
   

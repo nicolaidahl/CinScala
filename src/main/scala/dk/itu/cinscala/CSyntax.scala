@@ -1,8 +1,8 @@
-package dk.itu.c
+package dk.itu.cinscala
 
 object CSyntaxTest extends App with CCompileAndRun {
-  import dk.itu.c.CAbstractSyntax._
-  import dk.itu.c.CSyntax._
+  import dk.itu.cinscala.CAbstractSyntax._
+  import dk.itu.cinscala.CSyntax._
   
   val main = 
     Function(CTypeVoid, CParameterList("main", List()))(
