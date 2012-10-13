@@ -30,21 +30,20 @@ import CAbstractSyntax._
 
 trait CGenerator {
   
-  def getEmptyVarEnv: Map[String, CTypeSpecifier] = Map.empty[String, CTypeSpecifier]
-  def getEmptyFunEnv: Map[String, List[CDeclaration]] = Map.empty[String, List[CDeclaration]]
+  def getEmptyVarEnv: List[String] = List()
+  def getEmptyFunEnv: List[String] = List()
   
   class CASTException(val smth:String) extends Exception(smth)
+  case class UnknownFunctionException(smth1:String)  extends CASTException(smth1)
   case class UnknownVariableException(smth1:String)  extends CASTException(smth1)
   case class VariableRedefinitionException(smth1:String) extends CASTException(smth1)
   case class FunctionRedefinitionException(smth1: String) extends CASTException(smth1)
   
-  
   def lookupVar(varEnv: VarEnv, identifier: String): Boolean =
-    varEnv.exists(_._1.equals(identifier))
+    varEnv.exists(_.equals(identifier))
   
   def lookupFunc(funEnv: FunEnv, identifier: String): Boolean =
-    funEnv.exists(_._1.equals(identifier))
-  
+    funEnv.exists(_.equals(identifier))
     
   //Main generate function
   def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
@@ -75,31 +74,21 @@ trait CGenerator {
 	        val result = generateControlLine(precompInstr, varEnv, funEnv)
 	        val (varEnv1, funEnv1, str1) = generateExternalDeclarations(varEnv, funEnv)(tail)
 	        (varEnv1, funEnv1, result + "\n" + str1)
-	    }
-	    
+	    }	    
 	}
   
   /**
    * Generate a function declaration
    */
   def generateFunctionDec(varEnv: VarEnv, funEnv: FunEnv, functionDec: CFunctionDec): (FunEnv, String) = {
-    val (ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
-    /*val returnType = functionDec.declarationSpecifiers match {
-      case Some(ds) => ds.typeSpec
-      case None => TypeInteger
-    }*/
-    val parameters = functionDec.declarationList match { //FIXME
-      case Some(p) => p
-      case None => List()
-    }
+    val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
     
-    val funEnv1 = funEnv + (ident -> parameters)//FIXME
+    if (lookupFunc(funEnv, ident)) throw new FunctionRedefinitionException(ident + " already defined")
+    val funEnv1 = ident :: funEnv
       
     val declarationSpecifiers = for {decSpecs <- functionDec.declarationSpecifiers} yield generateDeclarationSpecifiers(decSpecs)
-
-    //val parametersStr = (parameters.map(generateDeclaration(varEnv, funEnv))).mkString("(", ", ", ")")
     
-    val body = generateStmt(varEnv, funEnv1)(functionDec.compoundStmt)//FIXME
+    val body = generateStmt(varEnv1, funEnv1)(functionDec.compoundStmt)
 
     (funEnv1, declarationSpecifiers.getOrElse("") + " " + str + "\n" + body)
   }  
@@ -111,42 +100,57 @@ trait CGenerator {
       case q: CTypeQualifier => generateTypeQualifier(q)
       case t: CTypeSpecifier => generateTypeSpecifier(t)
     })
-    
-    /*val storage = for { st <- dec.storage } yield generateStorageClassSpecifier(st) + " "
-    val qualifier = for { q <- dec.qualifier } yield generateTypeQualifier(q) + " "
-    
-    storage.getOrElse("") + qualifier.getOrElse("") + generateTypeSpecifier(dec.typeSpec)*/
+
     decs.mkString(" ")
+  }
+  
+  def lookupVarIdentifier(varEnv: VarEnv)(dec: CDeclarator) = {    
+    val ident = dec match {
+      case CDeclareIdentifier(i) => Some(i)
+      case _ => None
+    }
+    
+    if (ident.isDefined && lookupVar(varEnv, ident.get)) throw new VariableRedefinitionException(ident.get + " already defined")
+    
+    ident
   }
   
   def generateDeclaration(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclaration): (VarEnv, String) = {
     val decSpecs = generateDeclarationSpecifiers(dec.decSpecs)
     
-    def buildDeclarators(varEnv: VarEnv, funEnv: FunEnv)(decs: List[CInitDeclarator]): (VarEnv, String) =
+    def buildDeclarators(varEnv: VarEnv, funEnv: FunEnv)(decs: List[CInitDeclarator], decSpecs: CDeclarationSpecifiers): (VarEnv, String) =
       decs match {
         case Nil => (varEnv, "")
         case head :: tail => {
-          val (varEnv1, str1) = generateInitDeclarator(varEnv, funEnv)(head)
-          val (varEnv2, str2) = buildDeclarators(varEnv, funEnv)(tail)
+          val (varEnv1, ident1, str1) = generateInitDeclarator(varEnv, funEnv)(head)
+          val (varEnv2, str2) = buildDeclarators(varEnv1, funEnv)(tail, decSpecs)
           val comma = str2 match {
             case "" => "" 
             case _ => ", "
           }
+          
           (varEnv2, str1 + comma + str2)
         }
       }
     
-    val (varEnv1, str) = buildDeclarators(varEnv, funEnv)(dec.declarators)
+    val (varEnv1, str) = buildDeclarators(varEnv, funEnv)(dec.declarators, dec.decSpecs)
     
     (varEnv1, decSpecs + " " + str + ";")
   }
   
-  def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CInitDeclarator): (String, String) = {
+  def generateInitDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CInitDeclarator): (VarEnv, String, String) = {
     dec match {
-      case CDeclaratorWrap(d) => generateDeclarator(varEnv, funEnv)(d)
+      case CDeclaratorWrap(d) => {
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)      
+        val varEnv2 = ident :: varEnv1
+        
+        (varEnv2, ident, str)
+      }
       case CDeclaratorWithAssign(d, a) => {
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
-        (ident, str + " = " + generateInitializer(varEnv, funEnv)(a))
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        val varEnv2 = ident :: varEnv
+        
+        (varEnv2, ident, str + " = " + generateInitializer(varEnv, funEnv)(a))
       }
     }
   }
@@ -157,19 +161,6 @@ trait CGenerator {
       case CScalar(initializers) => "{" + initializers.map(i => generateInitializer(varEnv, funEnv)(i)).mkString(", ") + "}"
     }
   }
-  
-  /*def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {    
-    val ps = dec.pointer match {
-      case Some(p) => {
-        generatePointer(p)
-      }
-      case None => ""
-    }
-    
-    val (ident, str) = generateDirectDeclarator(varEnv, funEnv)(dec.directDeclarator) 
-    
-    (ident, ps + str) 
-  }*/
   
   def generatePointer(point: CPointer): String = {
 	  val p = point.pointer match {
@@ -185,55 +176,57 @@ trait CGenerator {
 	  "*" + q + p
   }
   
-  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (String, String) = {
+  def generateDeclarator(varEnv: VarEnv, funEnv: FunEnv)(dec: CDeclarator): (VarEnv, String, String) = {
     dec match {
       case CPointerDeclarator(pointer, declarator) => 
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
-        (ident, generatePointer(pointer) + str)
-      case CDeclareIdentifier(name) => (name, name)
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
+        (varEnv1, ident, generatePointer(pointer) + str)
+      case CDeclareIdentifier(name) => (varEnv, name, name)
       case CParenthesiseDeclarator(declarator) => 
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
-        (ident, "(" + str + ")")
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
+        (varEnv1, ident, "(" + str + ")")
       case CDeclareArray(dirDecl, expr) => {
     	val exprVal = expr match {
     	  case Some(e) => generateExpression(varEnv, funEnv)(e)
     	  case None => ""
     	}
-    	val (ident, str) = generateDeclarator(varEnv, funEnv)(dirDecl)
-    	(ident, str + "[" + exprVal + "]")
+    	val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(dirDecl)
+    	(varEnv1, ident, str + "[" + exprVal + "]")
       }
       case CParameterList(d, p) => {
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
-        val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
-        (ident, str + "(" + ps + ")")
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        val ps = p.map(generateParameterDeclaration(varEnv1, funEnv))
+        val varEnv2: VarEnv = ps.map(_._1) ++ varEnv1
+        (varEnv2, ident, str + "(" + ps.map(_._2).mkString(", ") + ")")
       } 
       case CParameterListWithEllipsis(d, p) =>
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
-        val ps = p.map(pp => generateParameterDeclaration(varEnv, funEnv)(pp)).mkString(", ")
-        (ident, str + "(" + ps + ", ...)")
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        val ps = p.map(generateParameterDeclaration(varEnv1, funEnv))
+        val varEnv2: VarEnv = ps.map(_._1) ++ varEnv1
+        (varEnv1, ident, str + "(" + ps.map(_._2).mkString(", ") + ", ...)")
       case CIdentifierList(d, i) => {
-        val (ident, str) = generateDeclarator(varEnv, funEnv)(d)
+        val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val is = i match {
           case Some(ii) => ii.mkString(", ")
           case None => ""
         }
-        (ident, is + str)
+        (varEnv1, ident, is + str)
       }
     }
   }
   
-  def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: CParameterDeclaration): String = {
+  def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: CParameterDeclaration): (String, String) = {
     p match {
       case CNormalDeclaration(decSpecs, dec) => {
         val str = generateDeclarator(varEnv, funEnv)(dec)._2
-        generateDeclarationSpecifiers(decSpecs) + " " + str
+        (str, generateDeclarationSpecifiers(decSpecs) + " " + str)
       }
       case CAbstractDeclaration(decSpecs, dec) => {
         val str = dec match {
           case Some(d) => generateAbstractDeclarator(varEnv, funEnv)(d)
           case None => ""
         }
-        generateDeclarationSpecifiers(decSpecs) + " " + str
+        (str, generateDeclarationSpecifiers(decSpecs) + " " + str)
       }
     }
   }
@@ -314,8 +307,6 @@ trait CGenerator {
       case CVolatile => "volatile"
     }
   }
-  
-  
   
   def generateStmt(varEnv: VarEnv, funEnv: FunEnv)(stmt: CStatement): String = {
     stmt match {
@@ -450,10 +441,10 @@ trait CGenerator {
     tq + generateTypeSpecifier(tsq.typeSpecifier)
   }
   
-  def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
+  def generateExpression(varEnv: VarEnv, funEnv: FunEnv, checkEnv: Boolean = true)(e: CExpression): String =
     e match {
       //Assignment Expression
-      case CAssign(assignTo, operator, expr) =>  //TODO make sure this works with the varEnv
+      case CAssign(assignTo, operator, expr) =>
         val assignToStr = generateExpression(varEnv, funEnv)(assignTo)
         val opeStr = generateAssignmentOp(operator)
         val exprStr = generateExpression(varEnv, funEnv)(expr)
@@ -482,21 +473,30 @@ trait CGenerator {
       case CPostfixDecrement (expression) => generateExpression(varEnv, funEnv)(expression) + "--"
       case CAccessIndex (postfixExpr, expr) => 
         generateExpression(varEnv,funEnv)(postfixExpr) + "[" + generateExpression(varEnv, funEnv)(expr) + "]"
-      case CCall (postfixExpression, arguments) => 
-        //if(!lookupFunc(funEnv, identifier))
-        //  printf("Warning: Function " + identifier + " is unknown.\n\n")
-        generateExpression(varEnv, funEnv)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
+      case CCall (postfixExpression, arguments) =>
+        postfixExpression match {
+          case identifier: CAccessIdentifier => {
+            if(!lookupFunc(funEnv, identifier.name)) {
+              throw new UnknownFunctionException("Function '" + identifier.name + "' is not defined")
+            }
+          }
+        }
+        
+        generateExpression(varEnv, funEnv, false)(postfixExpression) + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
       case CAccessMember (postfixExpr, memberToAccess) => 
         generateExpression(varEnv, funEnv)(postfixExpr) + "." + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
       case CAccessArrowMember (postfixExpr, memberToAccess) =>
         generateExpression(varEnv, funEnv)(postfixExpr) + "->" + generateDeclarator(varEnv, funEnv)(memberToAccess)._2
     
 	  //Primary Expressions
-      case CAccessIdentifier(name) => name
+      case CAccessIdentifier(name) => {
+        if (checkEnv && !lookupVar(varEnv, name)) throw new UnknownVariableException("Variable '" + name + "' not defined")
+        name
+      }
       case CConstantInteger(contents) => contents.toString()
       case CConstantChar (contents) => "'" + contents.toString() + "'"
       case CConstantFloat (contents) => {
-        // Set det locale to English, so commas in floats are written as "."
+        // Set the locale to English, so commas in floats are written as "."
  	    java.util.Locale.setDefault(java.util.Locale.ENGLISH)
  	    "%.6f".format(contents) + "f"
       }
@@ -505,20 +505,6 @@ trait CGenerator {
       case CParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"
       case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
     }
-  
-    
-  /*def generateAccess(a: Access, varEnv: VarEnv, funEnv: FunEnv): String =
-    a match {
-      case AccessVariable(identifier) => 
-        if(lookupVar(varEnv, identifier))
-          identifier
-        else
-          throw new UnknownVariableException("The variable " + identifier + " does not exist in the current scope.")
-      case AccessDeref(expr) => "*" + generateExpr(varEnv, funEnv)(expr)
-      case AccessIndex(access, expr) => generateAccess(access, varEnv, funEnv) + "[" + generateExpr(varEnv, funEnv)(expr) + "]"
-    }*/
-    
-  
 }
 
 

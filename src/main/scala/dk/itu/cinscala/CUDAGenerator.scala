@@ -2,11 +2,10 @@ package dk.itu.cinscala
 import CAbstractSyntax._
 import CUDAAbstractSyntax._
 
-
 trait CUDAGenerator extends CGenerator {
-  
   override def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
-    generateExternalDeclarations(varEnv, funEnv)(prog.contents)._3
+    val varEnv1 = List("threadIdx", "threadIdy", "blockIdx", "blockIdy", "blockDim", "gridDim") ++ varEnv
+    generateExternalDeclarations(varEnv1, funEnv)(prog.contents)._3
   }
   
   override def generateExternalDeclarations (varEnv: VarEnv, funEnv: FunEnv)(topDecs: List[CExternalDeclaration]): (VarEnv, FunEnv, String) = {
@@ -22,8 +21,7 @@ trait CUDAGenerator extends CGenerator {
             (varEnv1, funEnv2, functionTypeStr + " " + str + str1)
           case _ =>
             super.generateExternalDeclarations(varEnv, funEnv)(head :: tail)
-        }
-      
+        }   
     }
   }
   
@@ -43,7 +41,7 @@ trait CUDAGenerator extends CGenerator {
       case CUDASharedQualifier => "__shared__"
     }
   
-  override def generateExpression(varEnv: VarEnv, funEnv: FunEnv)(e: CExpression): String =
+  override def generateExpression(varEnv: VarEnv, funEnv: FunEnv, checkEnv: Boolean = true)(e: CExpression): String =
     e match {
       case CUDAKernelCall(dg, db, postfixExpression, arguments) =>
         val cudaCallStr = "<<<" + dg.toString() + ", " + db.toString() + ">>>"
@@ -52,7 +50,7 @@ trait CUDAGenerator extends CGenerator {
         val cudaArgList = List(dg, db, ns.getOrElse(0), stream.getOrElse(0))
         val cudaCallStr = "<<<" + cudaArgList.mkString(", ") + ">>>"
         generateExpression(varEnv, funEnv)(postfixExpression) + cudaCallStr + arguments.map(generateExpression(varEnv, funEnv)).mkString("(", ", ", ")")
-      case other => super.generateExpression(varEnv, funEnv)(other)
+      case other => super.generateExpression(varEnv, funEnv, checkEnv)(other)
     }
   
 }

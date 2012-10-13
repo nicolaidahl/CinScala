@@ -22,7 +22,9 @@ object MainFunctionTest extends Test {
   val mainBody = CCompoundStmt(List(CExpressionStmt(Some(CCall(CAccessIdentifier("printf"), List(CCharArray("%d"), CCall(CAccessIdentifier("ab"), List()))))), CReturn(Some(CConstantInteger(0)))))
   val main = generateMain(mainBody)
   
-  val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), globalDecs, ab, main))
+  val ab2 = generateFunction(CDeclarationSpecifiers(List(CTypeInteger)), "abc", List(), abBody)
+  
+  val ast = CProgram(List(CPreprocessorInstruction(CIncludeGlobal("stdio.h")), globalDecs, ab, main, ab2))
   
   def test = compile(ast)
     

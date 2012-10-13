@@ -7,13 +7,10 @@ trait CompileAndRunInterface {
   
   val commandRunner = CommandRunner
   
-  def compile(abstractSyntaxTree: Program): Prog
+  def compile(abstractSyntaxTree: Program, varEnv: List[String], funEnv: List[String]): Prog
   def run(program: Prog): Result
-  def compileAndRun(abstractSyntaxTree: Program): Result =
-    run(compile(abstractSyntaxTree))
-  
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String], funEnv: List[String]): Result
 }
-
 
 trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
   import CAbstractSyntax._
@@ -22,8 +19,8 @@ trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: Program): Prog = {
-	generate(abstractSyntaxTree, getEmptyVarEnv, getEmptyFunEnv)
+  def compile(abstractSyntaxTree: Program, varEnv: VarEnv = getEmptyVarEnv, funEnv: FunEnv = getEmptyFunEnv): Prog = {
+	generate(abstractSyntaxTree, varEnv, funEnv)
   }
   
   def run(program: Prog): Result = {
@@ -40,19 +37,21 @@ trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
       case _ => throw new IllegalArgumentException(program +  "\n Does not compile: \n" + stderr.mkString("\n"))
     } 
   }
+  
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String] = getEmptyVarEnv, funEnv: List[String] = getEmptyFunEnv): Result =
+    run(compile(abstractSyntaxTree, varEnv, funEnv)) 
 }
 
-
-
 object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
+  import CAbstractSyntax._
   import CUDAAbstractSyntax._
   
   type Program = CUDAProgram
   type Prog = String
   type Result = String
   
-  def compile(abstractSyntaxTree: Program): Prog = {
-	generate(abstractSyntaxTree, getEmptyVarEnv, getEmptyFunEnv)
+  def compile(abstractSyntaxTree: Program, varEnv: VarEnv = getEmptyVarEnv, funEnv: FunEnv = getEmptyFunEnv): Prog = {
+	generate(abstractSyntaxTree, varEnv, funEnv)
   }
   
   def run(program: Prog): Result = {
@@ -70,5 +69,6 @@ object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
     } 
   }
   
-  
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String] = getEmptyVarEnv, funEnv: List[String] = getEmptyFunEnv): Result =
+    run(compile(abstractSyntaxTree, varEnv, funEnv)) 
 }

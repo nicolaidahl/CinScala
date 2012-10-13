@@ -27,11 +27,10 @@ furnished to do so, subject to the following conditions:
 package dk.itu.cinscala
 
 object CAbstractSyntax {
-  
-  //Variable environment: Map from identifier to variable type
-  type VarEnv = Map[String, CTypeSpecifier] 
-  //Function environment: Map from identifier to tuple of return type and argument list
-  type FunEnv = Map[String, List[CDeclaration]]
+  //Variable environment: List of variable identifiers
+  type VarEnv = List[String] 
+  //Function environment: List of function identifiers
+  type FunEnv = List[String]
   
   trait Program{
     val contents: List[CExternalDeclaration]
@@ -174,14 +173,6 @@ object CAbstractSyntax {
     def apply(s: String): CTypeEnum = CTypeEnum(Some(s))
   }
   
-  
-  /*case class  TypeStruct(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
-  case class  TypeStructShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
-  case class  TypeUnion(ident: Option[String], structDeclarations: List[CStructUnionDeclaration]) extends CTypeSpecifier
-  case class  TypeUnionShort(ident: String, structDeclarations: Option[List[CStructUnionDeclaration]]) extends CTypeSpecifier
-  case class  TypeEnum(ident: Option[String], enumerations: List[CEnumerationDec]) extends CTypeSpecifier
-  case class  TypeEnumShort(ident: String, enumerations: Option[List[CEnumerationDec]]) extends CTypeSpecifier*/
-  
   case class CStructUnionDeclaration(typeQualifier: CTypeQualifier, typeSpecifier: CTypeSpecifier, declarator: List[CDeclarator]) //const int foo = 2, bar;
   
   case class CEnumerationDec(ident: String, assignment: Option[CExpression]) //enum ident { foo = 2, bar = 4 };
@@ -269,7 +260,6 @@ object CAbstractSyntax {
   case object CConstantEnumeration extends CPrimaryExpression //TODO find out what this is
   case class CCharArray (content: String) extends CPrimaryExpression
   case class CParenthesiseExpr (expression: CExpression) extends CPrimaryExpression
-  
 }
 
 
