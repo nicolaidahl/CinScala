@@ -81,12 +81,29 @@ trait CGenerator {
 	}
   
   /*
-   * Generates includes
+   * Generates preprocessor instructions
    */
   def generateControlLine(instr: CControlLine, varEnv: VarEnv, funEnv: FunEnv) = {
     instr match {
+      case CDefine(i, d) => "#define " + i + " " + d
+      case CUndefine(i) => "#undef " + i
       case CIncludeLocal(s) => "#include \"" + s + "\" \n"
       case CIncludeGlobal(s) => "#include <" + s + "> \n"
+      case CLine(l, f) => "#line " + l.contents + " " + f.getOrElse("") + "\n"
+      case CError(t) => "#error " + t.getOrElse("") + "\n"
+      case CPragma(t) => "#pragma " + t.getOrElse("") + "\n"
+      case instr: CControlLineConditional => generateControlLineConditional(instr)
+    }
+  }
+  
+  /*
+   * Generates preprocessor conditionals
+   */
+  def generateControlLineConditional(c: CControlLineConditional) {
+    c.ifLine match {
+      case CControlLineIfCond => "#if " + c.iff.cond + " " + c.iff.then
+      case CControlLineIfDef => "#ifdef"
+      case CControlLineIfNDef => "#ifndef"
     }
   }
   
@@ -515,7 +532,7 @@ trait CGenerator {
  	    java.util.Locale.setDefault(java.util.Locale.ENGLISH)
  	    "%.6f".format(contents) + "f"
       }
-      case CConstantEnumeration => "" //TODO find out what this is
+      case CConstantEnumeration(s) => s 
       case CCharArray (content) => "\"" + content + "\""
       case CParenthesiseExpr(content) => "(" + generateExpression(varEnv, funEnv)(content) + ")"
       case expr: CPostfixExpression => generateExpression(varEnv, funEnv)(expr)
