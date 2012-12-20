@@ -44,9 +44,27 @@ object CAbstractSyntax {
   case class CGlobalDeclaration(decSpecs: CDeclarationSpecifiers, declarators: List[CInitDeclarator]) extends CExternalDeclaration
   case class CPreprocessorInstruction (controlLine: CControlLine) extends CExternalDeclaration
   
-  sealed abstract class CControlLine //TODO implement the rest
+  //Preprocessor instructions (control line)
+  sealed abstract class CControlLine
+  case class CDefine (ident: String, definition: String) extends CControlLine
+  case class CUndefine (ident: String) extends CControlLine
   case class CIncludeLocal (fileName: String) extends CControlLine
   case class CIncludeGlobal (fileName: String) extends CControlLine
+  case class CLine (c: CConstantInteger, filename: Option[String]) extends CControlLine
+  case class CError (tokens: Option[String]) extends CControlLine
+  case class CPragma (tokens: Option[String]) extends CControlLine
+  
+  //Preprocessor conditionals
+  case class CControlLineConditional (ifLine: CControlLineIfLine, iff: CControlLineIf, elses: List[CControlLineIfElse], cElse: Option[CControlLineElse] = None)
+  
+  case class CControlLineIf (cond: String, then: String)
+  case class CControlLineIfElse (cond: String, then: String)
+  case class CControlLineElse (then: String)
+  
+  sealed abstract class CControlLineIfLine
+  case object CControlLineIfCond extends CControlLineIfLine
+  case object CControlLineIfDef extends CControlLineIfLine
+  case object CControlLineIfNDef extends CControlLineIfLine
   
   //Declaration specifier
   case class CDeclarationSpecifiers(decSpecs: List[CDeclarationSpecifierUnit])
@@ -114,7 +132,6 @@ object CAbstractSyntax {
   case object CVolatile extends CTypeQualifier
   
   //C statements
-
   case class CExpressionStmt(expr: Option[CExpression]) extends CStatement
   object CExpressionStmt {
     def apply(): CExpressionStmt = CExpressionStmt(None)
@@ -173,9 +190,15 @@ object CAbstractSyntax {
     def apply(s: String): CTypeEnum = CTypeEnum(Some(s))
   }
   
+  // Union & enums
   case class CStructUnionDeclaration(typeQualifier: CTypeQualifier, typeSpecifier: CTypeSpecifier, declarator: List[CDeclarator]) //const int foo = 2, bar;
   
-  case class CEnumerationDec(ident: String, assignment: Option[CExpression]) //enum ident { foo = 2, bar = 4 };
+  abstract class CEnumeration
+  case class CEnumerationWithAssign(ident: Option[String], assignment: List[CEnumerator]) extends CEnumeration //enum ident { foo = 2, bar = 4 };
+ 
+  abstract class CEnumerator
+  case class CEnumeratorWithAssign(assigns: List[CAssign]) //enum ident { foo = 2, bar = 4 }
+  case class CEnumeratorWithoutAssign(identifiers: List[String]) //enum ident { foo, bar }
   
   //C Unary operators
   abstract class CUnaryOp 
@@ -257,14 +280,7 @@ object CAbstractSyntax {
   case class CConstantInteger (contents: Int) extends CPrimaryExpression
   case class CConstantChar (contents: Char) extends CPrimaryExpression
   case class CConstantFloat (contents: Float) extends CPrimaryExpression
-  case object CConstantEnumeration extends CPrimaryExpression //TODO find out what this is
+  case class CConstantEnumeration (name: String) extends CPrimaryExpression
   case class CCharArray (content: String) extends CPrimaryExpression
   case class CParenthesiseExpr (expression: CExpression) extends CPrimaryExpression
 }
-
-
-
-
-
-
-
