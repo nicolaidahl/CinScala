@@ -13,8 +13,6 @@ project/plugins/project/
 .scala_dependencies
 /.settings
 
-.classpath
-.project
 .cache
 .DS_Store
 
