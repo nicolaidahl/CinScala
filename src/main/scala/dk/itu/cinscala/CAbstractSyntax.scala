@@ -27,10 +27,10 @@ furnished to do so, subject to the following conditions:
 package dk.itu.cinscala
 
 object CAbstractSyntax {
-  //Variable environment: List of variable identifiers
-  type VarEnv = List[String] 
-  //Function environment: List of function identifiers
-  type FunEnv = List[String]
+  //Variable environment: Set of variable identifiers
+  type VarEnv = Set[String] 
+  //Function environment: Set of function identifiers
+  type FunEnv = Set[String]
   
   trait Program{
     val contents: List[CExternalDeclaration]
@@ -55,11 +55,12 @@ object CAbstractSyntax {
   case class CPragma (tokens: Option[String]) extends CControlLine
   
   //Preprocessor conditionals
-  case class CControlLineConditional (ifLine: CControlLineIfLine, iff: CControlLineIf, elses: List[CControlLineIfElse], cElse: Option[CControlLineElse] = None)
+  case class CControlLineConditional (ifLine: CControlLineIfLine, iff: CControlLineIf, 
+      elses: List[CControlLineIfElse], cElse: Option[CControlLineElse] = None) extends CControlLine
   
-  case class CControlLineIf (cond: String, then: String)
-  case class CControlLineIfElse (cond: String, then: String)
-  case class CControlLineElse (then: String)
+  case class CControlLineIf (cond: String, thenBranch: String)
+  case class CControlLineIfElse (cond: String, thenBranch: String)
+  case class CControlLineElse (thenBranch: String)
   
   sealed abstract class CControlLineIfLine
   case object CControlLineIfCond extends CControlLineIfLine

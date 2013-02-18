@@ -4,7 +4,7 @@ import CUDAAbstractSyntax._
 
 trait CUDAGenerator extends CGenerator {
   override def generate (prog: Program, varEnv: VarEnv, funEnv: FunEnv): String = {
-    val varEnv1 = List("threadIdx", "threadIdy", "blockIdx", "blockIdy", "blockDim", "gridDim") ++ varEnv
+    val varEnv1 = Set("threadIdx", "threadIdy", "blockIdx", "blockIdy", "blockDim", "gridDim") ++ varEnv
     generateExternalDeclarations(varEnv1, funEnv)(prog.contents)._3
   }
   

@@ -4,7 +4,7 @@ organization := "dk.itu"
 
 version := "0.2-SNAPSHOT"
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.0"
 
 scalacOptions += "-deprecation"
 
@@ -15,7 +15,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scalacheck" %% "scalacheck" % "1.9" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
   //"org.scalaz" %% "scalaz-core" % "7.0-SNAPSHOT"
 )
 

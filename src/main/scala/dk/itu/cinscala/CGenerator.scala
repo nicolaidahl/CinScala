@@ -29,8 +29,8 @@ import scala.collection.mutable.HashMap
 import CAbstractSyntax._
 
 trait CGenerator {
-  def getEmptyVarEnv: List[String] = List()
-  def getEmptyFunEnv: List[String] = List()
+  def getEmptyVarEnv: Set[String] = Set()
+  def getEmptyFunEnv: Set[String] = Set()
   
   class CASTException(val smth:String) extends Exception(smth)
   case class UnknownFunctionException(smth1:String)  extends CASTException(smth1)
@@ -99,9 +99,9 @@ trait CGenerator {
   /*
    * Generates preprocessor conditionals
    */
-  def generateControlLineConditional(c: CControlLineConditional) {
+  def generateControlLineConditional(c: CControlLineConditional) = {
     c.ifLine match {
-      case CControlLineIfCond => "#if " + c.iff.cond + " " + c.iff.then
+      case CControlLineIfCond => "#if " + c.iff.cond + " " + c.iff.thenBranch
       case CControlLineIfDef => "#ifdef"
       case CControlLineIfNDef => "#ifndef"
     }
@@ -114,7 +114,7 @@ trait CGenerator {
     val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(functionDec.declarator)
     
     if (lookupFunc(funEnv, ident)) throw new FunctionRedefinitionException(ident + " already defined")
-    val funEnv1 = ident :: funEnv
+    val funEnv1 = funEnv + ident
       
     val declarationSpecifiers = for {decSpecs <- functionDec.declarationSpecifiers} yield generateDeclarationSpecifiers(decSpecs)
     
@@ -212,13 +212,13 @@ trait CGenerator {
     dec match {
       case CDeclaratorWrap(d) => {
         val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)      
-        val varEnv2 = ident :: varEnv1
+        val varEnv2 = varEnv1 + ident
         
         (varEnv2, ident, str)
       }
       case CDeclaratorWithAssign(d, a) => {
         val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
-        val varEnv2 = ident :: varEnv
+        val varEnv2 = varEnv + ident
         
         (varEnv2, ident, str + " = " + generateInitializer(varEnv, funEnv)(a))
       }
@@ -253,14 +253,14 @@ trait CGenerator {
       case CParameterList(d, p) => {
         val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val ps = p.map(generateParameterDeclaration(varEnv1, funEnv))
-        val varEnv2: VarEnv = ps.map(_._1) ++ varEnv1
+        val varEnv2: VarEnv = varEnv1 ++ ps.map(_._1).toSet
         (varEnv2, ident, str + "(" + ps.map(_._2).mkString(", ") + ")")
       } 
       // Parameters with ellipsis
       case CParameterListWithEllipsis(d, p) =>
         val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(d)
         val ps = p.map(generateParameterDeclaration(varEnv1, funEnv))
-        val varEnv2: VarEnv = ps.map(_._1) ++ varEnv1
+        val varEnv2: VarEnv = varEnv1 ++ ps.map(_._1).toSet
         (varEnv1, ident, str + "(" + ps.map(_._2).mkString(", ") + ", ...)")
       // Identifier list
       case CIdentifierList(d, i) => {
@@ -508,9 +508,10 @@ trait CGenerator {
       case CCall (postfixExpression, arguments) =>
         postfixExpression match {
           case identifier: CAccessIdentifier => {
-            if(!lookupFunc(funEnv, identifier.name)) {
+             
+            /*if(!lookupFunc(funEnv, identifier.name)) {
               throw new UnknownFunctionException("Function '" + identifier.name + "' is not defined")
-            }
+            }*/
           }
         }
         

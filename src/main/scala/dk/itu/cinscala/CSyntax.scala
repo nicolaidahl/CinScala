@@ -1,4 +1,5 @@
 package dk.itu.cinscala
+import scala.language._
 
 object CSyntaxTest extends App with CCompileAndRun {
   import dk.itu.cinscala.CAbstractSyntax._

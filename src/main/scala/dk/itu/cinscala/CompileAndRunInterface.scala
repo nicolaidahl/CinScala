@@ -1,5 +1,7 @@
 package dk.itu.cinscala
 
+
+
 trait CompileAndRunInterface {
   type Program
   type Prog
@@ -7,9 +9,9 @@ trait CompileAndRunInterface {
   
   val commandRunner = CommandRunner
   
-  def compile(abstractSyntaxTree: Program, varEnv: List[String], funEnv: List[String]): Prog
+  def compile(abstractSyntaxTree: Program, varEnv: Set[String], funEnv: Set[String]): Prog
   def run(program: Prog): Result
-  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String], funEnv: List[String]): Result
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: Set[String], funEnv: Set[String]): Result
 }
 
 trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
@@ -38,7 +40,7 @@ trait CCompileAndRun extends CompileAndRunInterface with CGenerator {
     } 
   }
   
-  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String] = getEmptyVarEnv, funEnv: List[String] = getEmptyFunEnv): Result =
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: Set[String] = getEmptyVarEnv, funEnv: Set[String] = getEmptyFunEnv): Result =
     run(compile(abstractSyntaxTree, varEnv, funEnv)) 
 }
 
@@ -69,6 +71,6 @@ object CUDACompileAndRun extends CompileAndRunInterface with CUDAGenerator {
     } 
   }
   
-  def compileAndRun(abstractSyntaxTree: Program, varEnv: List[String] = getEmptyVarEnv, funEnv: List[String] = getEmptyFunEnv): Result =
+  def compileAndRun(abstractSyntaxTree: Program, varEnv: Set[String] = getEmptyVarEnv, funEnv: Set[String] = getEmptyFunEnv): Result =
     run(compile(abstractSyntaxTree, varEnv, funEnv)) 
 }
