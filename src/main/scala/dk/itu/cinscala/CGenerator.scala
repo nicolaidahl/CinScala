@@ -233,7 +233,8 @@ trait CGenerator {
       // Pointer
       case CPointerDeclarator(pointer, declarator) => 
         val (varEnv1, ident, str) = generateDeclarator(varEnv, funEnv)(declarator)
-        (varEnv1, ident, generatePointer(pointer) + str)
+        val pointerStr = generatePointer(pointer)
+        (varEnv1, ident, pointerStr + str)
       // Identifier
       case CDeclareIdentifier(name) => (varEnv, name, name)
       // Parenthesise declarator
@@ -290,8 +291,8 @@ trait CGenerator {
   def generateParameterDeclaration(varEnv: VarEnv, funEnv: FunEnv)(p: CParameterDeclaration): (String, String) = {
     p match {
       case CNormalDeclaration(decSpecs, dec) => {
-        val str = generateDeclarator(varEnv, funEnv)(dec)._2
-        (str, generateDeclarationSpecifiers(decSpecs) + " " + str)
+        val str = generateDeclarator(varEnv, funEnv)(dec)
+        (str._2, generateDeclarationSpecifiers(decSpecs) + " " + str._3)
       }
       case CAbstractDeclaration(decSpecs, dec) => {
         val str = dec match {
@@ -523,7 +524,8 @@ trait CGenerator {
     
 	  //Primary Expressions
       case CAccessIdentifier(name) => {
-        if (checkEnv && !lookupVar(varEnv, name)) throw new UnknownVariableException("Variable '" + name + "' not defined")
+        if (checkEnv && !lookupVar(varEnv, name)) 
+          throw new UnknownVariableException("Variable '" + name + "' not defined")
         name
       }
       case CConstantInteger(contents) => contents.toString()
