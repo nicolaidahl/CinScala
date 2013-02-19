@@ -87,11 +87,11 @@ trait CGenerator {
     instr match {
       case CDefine(i, d) => "#define " + i + " " + d
       case CUndefine(i) => "#undef " + i
-      case CIncludeLocal(s) => "#include \"" + s + "\" \n"
-      case CIncludeGlobal(s) => "#include <" + s + "> \n"
-      case CLine(l, f) => "#line " + l.contents + " " + f.getOrElse("") + "\n"
-      case CError(t) => "#error " + t.getOrElse("") + "\n"
-      case CPragma(t) => "#pragma " + t.getOrElse("") + "\n"
+      case CIncludeLocal(s) => "#include \"" + s + "\""
+      case CIncludeGlobal(s) => "#include <" + s + "> "
+      case CLine(l, f) => "#line " + l.contents + " " + f.getOrElse("")
+      case CError(t) => "#error " + t.getOrElse("")
+      case CPragma(t) => "#pragma " + t.getOrElse("")
       case instr: CControlLineConditional => generateControlLineConditional(instr)
     }
   }
