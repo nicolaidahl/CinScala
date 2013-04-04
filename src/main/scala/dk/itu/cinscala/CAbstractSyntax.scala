@@ -138,9 +138,9 @@ object CAbstractSyntax {
     def apply(expr: CExpression): CExpressionStmt = CExpressionStmt(Some(expr))
   }
   case class CCompoundStmt(stmtOrDecList: List[CStmtOrDec]) extends CStatement //{ declaration-list_opt statement-list_opt }
-  object CCompoundStmt {
+  /*object CCompoundStmt {
     def apply(stmts: CStmtOrDec*): CCompoundStmt = CCompoundStmt(stmts.toList)
-  }
+  }*/
   
   sealed abstract class CLabeledStatement extends CStatement
   case class CLabelStmt(ident: String, stmt: CStatement) extends CLabeledStatement //ident : stmt

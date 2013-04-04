@@ -76,7 +76,7 @@ object CSyntax {
     def *(other: CExpression): CExpression = CBinaryPrim(CBinaryTimes, e, other)
     def /(other: CExpression): CExpression = CBinaryPrim(CBinaryDivide, e, other)
     def %(other: CExpression): CExpression = CBinaryPrim(CBinaryModulo, e, other)
-    def ==(other: CExpression): CExpression = CBinaryPrim(CBinaryEquality, e, other)
+    def ===(other: CExpression): CExpression = CBinaryPrim(CBinaryEquality, e, other)
     def <(other: CExpression): CExpression = CBinaryPrim(CBinaryLessThan, e, other)
     def <=(other: CExpression): CExpression = CBinaryPrim(CBinaryLessThanOrEquals, e, other)
     def >(other: CExpression): CExpression = CBinaryPrim(CBinaryGreaterThan, e, other)
