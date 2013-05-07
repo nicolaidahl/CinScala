@@ -12,6 +12,14 @@ project/plugins/project/
 # Scala-IDE specific
 .scala_dependencies
 /.settings
+.classpath
+.project
+
+# Ensime
+/.ensime*
+
+# Sublime Text 2
+*.sublime-*
 
 .cache
 .DS_Store
