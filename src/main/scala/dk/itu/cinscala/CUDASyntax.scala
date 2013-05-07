@@ -30,6 +30,22 @@ object CUDASyntax {
   import CUDAAbstractSyntax._
   import CSyntax._
 
+  // CUDA qualifiers
+  val global   = CUDAGlobalQualifier
+  val device   = CUDADeviceFuncQualifier
+  val shared   = CUDASharedQualifier
+  val constant = CUDAConstantQualifier
+  
+  /**
+   * Produces a CUDAFunctionDec based on the supplied parameters.
+   * 
+   * @param functionType Can be device or global
+   * @param ctype The return type of the function
+   * @param identifier The name of the declaration
+   * @param args A list of arguments, consisting of (type, declarator)
+   * @param contents The contents of the function
+   * @return A CUDAFunctionDec
+   */
   def CUDAFunc(functionType: CUDAFunctionQualifier, ctype: List[CDeclarationSpecifierUnit], identifier: String, args: List[(CTypeSpecifier, CDeclarator)])(contents: CStmtOrDec*): CUDAFunctionDec = {
     val params = args.map(a => CNormalDeclaration(a._1, a._2))
       
