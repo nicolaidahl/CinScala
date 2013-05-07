@@ -74,7 +74,7 @@ object CSyntax {
   
   // Assignment
   case class CAssignSyntax (cue: CUnaryExpression) {
-    def =-(e: CExpression) = CAssign(cue, CEquals, e)
+    def :=(e: CExpression) = CAssign(cue, CEquals, e)
     def *=(e: CExpression) = CAssign(cue, CTimesEquals, e)
     def /=(e: CExpression) = CAssign(cue, CDivisionEquals, e)
     def %=(e: CExpression) = CAssign(cue, CModuloEquals, e)
@@ -136,7 +136,7 @@ object CSyntax {
   def acc(n: String): CAccessIdentifier = CAccessIdentifier(n)
   
   // Functions
-  def Func(ctype: List[CDeclarationSpecifierUnit], identifier: String, args: List[(CTypeSpecifier, CDeclarator)])(contents: CStmtOrDec*): CFunctionDec = {
+  def Func(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, args: List[(CDeclarationSpecifiers, CDeclarator)])(contents: CStmtOrDec*): CFunctionDec = {
     val params = args.map(a => CNormalDeclaration(a._1, a._2))
       
     CFunctionDec(Some(CDeclarationSpecifiers(ctype)), CParameterList(identifier, params), None, CCompoundStmt(contents.toList))
@@ -144,22 +144,22 @@ object CSyntax {
   
   // Local declarations
   case object Dec {
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator): CLocalDeclaration =
       apply(ctype, List(identifier), List(), None)
     
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String, expression: CExpression): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, expression: CExpression): CLocalDeclaration =
       apply(ctype, List(identifier), List(expression), None)
     
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String, expressions: List[CExpression]): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, expressions: List[CExpression]): CLocalDeclaration =
       apply(ctype, List(identifier), expressions, None)
       
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String, arraySize: Int): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, arraySize: Int): CLocalDeclaration =
       apply(ctype, List(identifier), List(), Some(arraySize))
     
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String, expression: CExpression, arraySize: Int): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, expression: CExpression, arraySize: Int): CLocalDeclaration =
       apply(ctype, List(identifier), List(expression), Some(arraySize))
     
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: String, expressions: List[CExpression], arraySize: Int): CLocalDeclaration =
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifier: CDeclarator, expressions: List[CExpression], arraySize: Int): CLocalDeclaration =
       apply(ctype, List(identifier), expressions, Some(arraySize))
     
     /**
@@ -171,10 +171,10 @@ object CSyntax {
      * @param array None means the local declaration will not be an array. Some(i) will produce an array of size i.
      * @return A CLocalDeclaration
      */
-    def apply(ctype: List[CDeclarationSpecifierUnit], identifiers: List[String], expressions: List[CExpression] = List(), array: Option[Int] = None): CLocalDeclaration = {
+    def apply(ctype: List[CDeclarationSpecifierUnit], identifiers: List[CDeclarator], expressions: List[CExpression] = List(), array: Option[Int] = None): CLocalDeclaration = {
       // Is this an array?
       val dec = array match {
-        case None    => identifiers.map(id => CDeclareIdentifier(id))
+        case None    => identifiers
         case Some(i) => identifiers.map(id => CDeclareArray(id, Some(int(i))))
       }
       
